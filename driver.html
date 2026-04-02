@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Buy On Line - تطبيق المندوب</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --navy: #1a2744;
+            --navy-light: #243556;
+            --navy-dark: #0f1a2e;
+            --orange: #f47920;
+            --orange-light: #ff9a4a;
+            --orange-dark: #d4631a;
+            --white: #ffffff;
+            --gray-100: #f0f2f5;
+            --gray-300: #b0b8c4;
+            --gray-600: #6b7a8d;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--navy-dark);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== LOGIN ===== */
+        .login-screen {
+            position: fixed; inset: 0; z-index: 9999;
+            background: linear-gradient(135deg, var(--navy-dark), var(--navy));
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .login-screen.hidden { display: none; }
+        .login-box {
+            background: rgba(36, 53, 86, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(244, 121, 32, 0.3);
+            border-radius: 24px; padding: 36px; text-align: center;
+            width: 100%; max-width: 380px;
+        }
+
+        /* Logo with spinning motorcycles */
+        .logo-wrapper {
+            position: relative; width: 140px; height: 140px;
+            margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
+        }
+        .logo-wrapper img {
+            width: 80px; border-radius: 16px;
+            position: relative; z-index: 2;
+            filter: drop-shadow(0 0 20px rgba(244, 121, 32, 0.4));
+        }
+        .moto-orbit { position: absolute; inset: 0; animation: spin 8s linear infinite; }
+        .moto-orbit:nth-child(2) { animation-delay: -2.66s; }
+        .moto-orbit:nth-child(3) { animation-delay: -5.33s; }
+        .moto-icon { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 1.2rem; color: var(--orange); }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .login-box h2 { color: var(--orange); margin-bottom: 8px; font-size: 1.3rem; }
+        .login-box p { color: var(--gray-300); margin-bottom: 20px; font-size: 0.9rem; }
+        .login-box input {
+            width: 100%; padding: 14px 20px; border-radius: 12px;
+            border: 2px solid rgba(244, 121, 32, 0.3);
+            background: rgba(15, 26, 46, 0.7); color: var(--white);
+            font-family: 'Tajawal'; font-size: 1.2rem; text-align: center;
+            outline: none; letter-spacing: 6px; margin-bottom: 16px;
+        }
+        .login-box input:focus { border-color: var(--orange); }
+
+        .btn {
+            padding: 12px 24px; border-radius: 12px; border: none;
+            font-family: 'Tajawal'; font-weight: 700; font-size: 1rem;
+            cursor: pointer; transition: all 0.3s; display: inline-flex;
+            align-items: center; gap: 8px; justify-content: center;
+        }
+        .btn-primary { background: var(--orange); color: var(--white); }
+        .btn-primary:hover { background: var(--orange-dark); }
+        .btn-success { background: var(--success); color: var(--white); }
+        .btn-danger { background: var(--danger); color: var(--white); }
+        .btn-outline { background: transparent; color: var(--orange); border: 2px solid var(--orange); }
+        .btn-sm { padding: 8px 14px; font-size: 0.85rem; }
+
+        /* ===== APP ===== */
+        .app { display: none; }
+        .app.show { display: block; }
+
+        /* Header */
+        .app-header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(26, 39, 68, 0.95);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(244, 121, 32, 0.2);
+            padding: 12px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .header-brand { display: flex; align-items: center; gap: 10px; }
+        .header-brand img { width: 36px; border-radius: 10px; }
+        .header-brand h3 { font-size: 1rem; }
+        .header-brand h3 span { color: var(--orange); }
+        .header-user { display: flex; align-items: center; gap: 8px; }
+        .header-user .user-name { font-size: 0.85rem; color: var(--gray-300); }
+        .header-user .logout-btn {
+            background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem;
+        }
+
+        /* GPS Status */
+        .gps-bar {
+            padding: 10px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(36, 53, 86, 0.4);
+            border-bottom: 1px solid rgba(244, 121, 32, 0.1);
+        }
+        .gps-status { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        .gps-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .gps-dot.on { background: var(--success); animation: pulse 2s infinite; }
+        .gps-dot.off { background: var(--danger); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* Stats */
+        .driver-stats {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 10px; padding: 16px;
+        }
+        .d-stat {
+            background: rgba(36, 53, 86, 0.5);
+            border: 1px solid rgba(244, 121, 32, 0.15);
+            border-radius: 12px; padding: 14px; text-align: center;
+        }
+        .d-stat .num { font-size: 1.6rem; font-weight: 800; color: var(--orange); }
+        .d-stat .label { font-size: 0.75rem; color: var(--gray-300); margin-top: 2px; }
+
+        /* Map */
+        #driverMap {
+            width: calc(100% - 32px); height: 200px;
+            margin: 0 16px 16px; border-radius: 12px;
+            border: 1px solid rgba(244, 121, 32, 0.2);
+        }
+
+        /* Orders */
+        .orders-section { padding: 0 16px 16px; }
+        .orders-section h3 {
+            font-size: 1.1rem; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .orders-section h3 i { color: var(--orange); }
+
+        .order-card {
+            background: rgba(36, 53, 86, 0.4);
+            border: 1px solid rgba(244, 121, 32, 0.15);
+            border-radius: 14px; padding: 16px; margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+        .order-card:hover { border-color: var(--orange); }
+        .order-top {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .order-code { color: var(--orange); font-weight: 700; font-size: 0.9rem; }
+        .badge {
+            padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700;
+        }
+        .badge-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .badge-processing { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .badge-shipped { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+        .badge-out_for_delivery { background: rgba(244, 121, 32, 0.2); color: var(--orange); }
+        .badge-delivered { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+
+        .order-detail { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 0.88rem; }
+        .order-detail i { color: var(--orange); width: 18px; margin-top: 2px; font-size: 0.8rem; }
+        .order-detail span { color: var(--gray-300); }
+
+        .order-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .order-distance {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.75rem; color: var(--gray-600);
+            background: rgba(15, 26, 46, 0.5); padding: 3px 10px; border-radius: 8px;
+        }
+
+        /* Footer */
+        .app-footer {
+            text-align: center; padding: 20px 16px;
+            border-top: 1px solid rgba(244, 121, 32, 0.1);
+        }
+        .footer-brand {
+            display: inline-flex; align-items: center; gap: 6px;
+            text-decoration: none; color: var(--gray-600); font-size: 0.8rem;
+        }
+        .footer-brand:hover { color: var(--orange); }
+        .footer-brand img { width: 24px; border-radius: 6px; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--success); color: var(--white); padding: 12px 24px;
+            border-radius: 10px; font-weight: 700; z-index: 9999;
+            display: none; font-size: 0.9rem;
+        }
+        .toast.error { background: var(--danger); }
+        .toast.show { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 2px; }
+
+        /* Empty */
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--gray-600); }
+        .empty-state i { font-size: 3rem; color: var(--gray-600); margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-box">
+        <div class="logo-wrapper">
+            <div class="moto-orbit"><span class="moto-icon"><i class="fas fa-motorcycle"></i></span></div>
+            <div class="moto-orbit"><span class="moto-icon"><i class="fas fa-motorcycle"></i></span></div>
+            <div class="moto-orbit"><span class="moto-icon"><i class="fas fa-motorcycle"></i></span></div>
+            <img src="bol-logo.png" alt="Logo">
+        </div>
+        <h2>تطبيق المندوب</h2>
+        <p>أدخل رقم تسجيل الدخول الخاص بك</p>
+        <input type="text" id="loginCode" placeholder="•••••" maxlength="20" onkeydown="if(event.key==='Enter')doDriverLogin()">
+        <br>
+        <button class="btn btn-primary" onclick="doDriverLogin()" style="width:100%; padding:14px;">
+            <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+        </button>
+    </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-brand">
+            <img src="bol-logo.png" alt="Logo">
+            <h3>Buy On <span>Line</span></h3>
+        </div>
+        <div class="header-user">
+            <span class="user-name" id="driverName"></span>
+            <button class="logout-btn" onclick="logout()" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </div>
+
+    <!-- GPS Bar -->
+    <div class="gps-bar">
+        <div class="gps-status">
+            <span class="gps-dot" id="gpsDot"></span>
+            <span id="gpsText">جاري تحديد الموقع...</span>
+        </div>
+        <button class="btn btn-sm btn-outline" id="gpsToggle" onclick="toggleGPS()">
+            <i class="fas fa-location-arrow"></i> تفعيل GPS
+        </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="driver-stats">
+        <div class="d-stat">
+            <div class="num" id="dStatTotal">0</div>
+            <div class="label">الكل</div>
+        </div>
+        <div class="d-stat">
+            <div class="num" id="dStatPending">0</div>
+            <div class="label">جاري</div>
+        </div>
+        <div class="d-stat">
+            <div class="num" id="dStatDone">0</div>
+            <div class="label">مسلّم</div>
+        </div>
+    </div>
+
+    <!-- Mini Map -->
+    <div id="driverMap"></div>
+
+    <!-- Orders List -->
+    <div class="orders-section">
+        <h3><i class="fas fa-box"></i> الطلبات الموكلة إليك</h3>
+        <div id="ordersList"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="app-footer">
+        <a href="https://zero-nine-rose.vercel.app/" target="_blank" class="footer-brand">
+            <span>تم الإنشاء والتطوير من</span>
+            <img src="zn-logo.png" alt="Zero-Nine">
+            <strong style="color: var(--orange);">Zero-Nine</strong>
+        </a>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CONFIG =====
+const SUPABASE_URL = 'https://sbfwmctjxrddwnldjafw.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_E_YrTw2zDR--HcpUUAewSQ_FUYLYZqU';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentDriver = null;
+let myOrders = [];
+let gpsWatchId = null;
+let gpsActive = false;
+let myLat = null, myLng = null;
+let driverMap = null;
+let myMarker = null;
+let companyLat = 29.8510;
+let companyLng = 31.2765;
+
+// ===== LOGIN =====
+async function doDriverLogin() {
+    const code = document.getElementById('loginCode').value.trim();
+    if (!code) return showToast('أدخل رقم تسجيل الدخول', true);
+
+    const { data, error } = await supabase
+        .from('drivers')
+        .select('*')
+        .eq('login_code', code)
+        .single();
+
+    if (error || !data) return showToast('رقم غير صحيح', true);
+
+    currentDriver = data;
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('app').classList.add('show');
+    document.getElementById('driverName').textContent = data.name;
+
+    await loadCompanyLocation();
+    await loadMyOrders();
+    initDriverMap();
+    startGPS();
+
+    // Realtime
+    supabase.channel('my-orders').on('postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `driver_id=eq.${currentDriver.id}` },
+        () => loadMyOrders()
+    ).subscribe();
+}
+
+function logout() {
+    stopGPS();
+    currentDriver = null;
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('app').classList.remove('show');
+    document.getElementById('loginCode').value = '';
+}
+
+// ===== LOAD COMPANY LOCATION =====
+async function loadCompanyLocation() {
+    try {
+        const { data } = await supabase.from('settings').select('*').in('key', ['company_lat', 'company_lng']);
+        if (data) {
+            data.forEach(s => {
+                if (s.key === 'company_lat') companyLat = parseFloat(s.value);
+                if (s.key === 'company_lng') companyLng = parseFloat(s.value);
+            });
+        }
+    } catch(e) {}
+}
+
+// ===== ORDERS =====
+async function loadMyOrders() {
+    if (!currentDriver) return;
+    const { data } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('driver_id', currentDriver.id)
+        .order('created_at', { ascending: false });
+
+    myOrders = data || [];
+
+    // Sort by distance from company
+    if (myLat && myLng) {
+        myOrders.sort((a, b) => {
+            // Use area-based distance approximation (or actual coords if available)
+            return 0; // Placeholder - sorted by created_at from Supabase
+        });
+    }
+
+    renderOrders();
+    updateDriverStats();
+}
+
+const statusTextMap = {
+    'pending': 'قيد الانتظار', 'processing': 'قيد التجهيز',
+    'shipped': 'تم الشحن', 'out_for_delivery': 'في الطريق',
+    'delivered': 'تم التسليم', 'cancelled': 'ملغي'
+};
+
+function renderOrders() {
+    const list = document.getElementById('ordersList');
+    const activeOrders = myOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
+    const doneOrders = myOrders.filter(o => o.status === 'delivered');
+
+    if (!myOrders.length) {
+        list.innerHTML = `<div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <p>لا توجد طلبات حالياً</p>
+        </div>`;
+        return;
+    }
+
+    let html = '';
+
+    // Active orders first
+    activeOrders.forEach(o => {
+        html += renderOrderCard(o, true);
+    });
+
+    // Done orders
+    if (doneOrders.length) {
+        html += `<h3 style="margin: 20px 0 12px; font-size: 0.95rem; color: var(--success);"><i class="fas fa-check-circle"></i> طلبات مسلّمة</h3>`;
+        doneOrders.forEach(o => {
+            html += renderOrderCard(o, false);
+        });
+    }
+
+    list.innerHTML = html;
+}
+
+function renderOrderCard(o, showActions) {
+    return `<div class="order-card">
+        <div class="order-top">
+            <span class="order-code"><i class="fas fa-barcode"></i> ${o.tracking_code}</span>
+            <span class="badge badge-${o.status}">${statusTextMap[o.status] || o.status}</span>
+        </div>
+        <div class="order-detail"><i class="fas fa-user"></i><span>${o.customer_name}</span></div>
+        <div class="order-detail"><i class="fas fa-phone"></i><span>${o.customer_phone || '-'}</span></div>
+        <div class="order-detail"><i class="fas fa-map-marker-alt"></i><span>${o.address || '-'}</span></div>
+        <div class="order-detail"><i class="fas fa-map-pin"></i><span>${o.area || '-'}</span></div>
+        <div class="order-detail"><i class="fas fa-money-bill"></i><span>${o.amount || 0} ج.م</span></div>
+        ${o.description ? `<div class="order-detail"><i class="fas fa-clipboard"></i><span>${o.description}</span></div>` : ''}
+        ${showActions ? `<div class="order-actions">
+            ${o.status === 'pending' || o.status === 'processing' ? `<button class="btn btn-sm btn-primary" onclick="updateOrderStatus('${o.id}','shipped')"><i class="fas fa-truck"></i> شحن</button>` : ''}
+            ${o.status === 'shipped' ? `<button class="btn btn-sm btn-primary" onclick="updateOrderStatus('${o.id}','out_for_delivery')"><i class="fas fa-motorcycle"></i> في الطريق</button>` : ''}
+            ${o.status === 'out_for_delivery' ? `<button class="btn btn-sm btn-success" onclick="updateOrderStatus('${o.id}','delivered')"><i class="fas fa-check"></i> تم التسليم</button>` : ''}
+            <a href="tel:${o.customer_phone}" class="btn btn-sm btn-outline"><i class="fas fa-phone"></i></a>
+            ${o.customer_phone ? `<a href="https://wa.me/2${o.customer_phone}" target="_blank" class="btn btn-sm btn-success" style="background:#25D366;"><i class="fab fa-whatsapp"></i></a>` : ''}
+        </div>` : ''}
+    </div>`;
+}
+
+async function updateOrderStatus(id, status) {
+    await supabase.from('orders').update({ status }).eq('id', id);
+    showToast('تم تحديث حالة الطلب');
+    loadMyOrders();
+}
+
+function updateDriverStats() {
+    const active = myOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
+    const done = myOrders.filter(o => o.status === 'delivered');
+    document.getElementById('dStatTotal').textContent = myOrders.length;
+    document.getElementById('dStatPending').textContent = active.length;
+    document.getElementById('dStatDone').textContent = done.length;
+}
+
+// ===== GPS =====
+function startGPS() {
+    if (!navigator.geolocation) {
+        showToast('المتصفح لا يدعم تحديد الموقع', true);
+        return;
+    }
+    gpsActive = true;
+    document.getElementById('gpsDot').className = 'gps-dot on';
+    document.getElementById('gpsText').textContent = 'الموقع مفعل';
+    document.getElementById('gpsToggle').innerHTML = '<i class="fas fa-location-arrow"></i> إيقاف GPS';
+
+    gpsWatchId = navigator.geolocation.watchPosition(
+        async (pos) => {
+            myLat = pos.coords.latitude;
+            myLng = pos.coords.longitude;
+            document.getElementById('gpsText').textContent = `${myLat.toFixed(4)}, ${myLng.toFixed(4)}`;
+
+            // Update driver location in DB
+            if (currentDriver) {
+                await supabase.from('drivers').update({
+                    lat: myLat, lng: myLng, last_seen: new Date().toISOString()
+                }).eq('id', currentDriver.id);
+            }
+
+            // Update map marker
+            if (driverMap && myMarker) {
+                myMarker.setLatLng([myLat, myLng]);
+                driverMap.setView([myLat, myLng], 14);
+            }
+        },
+        (err) => {
+            document.getElementById('gpsDot').className = 'gps-dot off';
+            document.getElementById('gpsText').textContent = 'فشل تحديد الموقع';
+        },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    );
+}
+
+function stopGPS() {
+    if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+    gpsActive = false;
+    document.getElementById('gpsDot').className = 'gps-dot off';
+    document.getElementById('gpsText').textContent = 'الموقع متوقف';
+    document.getElementById('gpsToggle').innerHTML = '<i class="fas fa-location-arrow"></i> تفعيل GPS';
+}
+
+function toggleGPS() {
+    if (gpsActive) stopGPS(); else startGPS();
+}
+
+// ===== DRIVER MAP =====
+function initDriverMap() {
+    if (driverMap) return;
+    const startLat = myLat || companyLat;
+    const startLng = myLng || companyLng;
+    driverMap = L.map('driverMap').setView([startLat, startLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OSM'
+    }).addTo(driverMap);
+
+    // Company marker
+    const companyIcon = L.divIcon({
+        className: '',
+        html: '<div style="background:#f47920;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid #fff;"><i class="fas fa-building"></i></div>',
+        iconSize: [28, 28], iconAnchor: [14, 14]
+    });
+    L.marker([companyLat, companyLng], { icon: companyIcon }).addTo(driverMap).bindPopup('مقر الشركة');
+
+    // Driver marker
+    const driverIcon = L.divIcon({
+        className: '',
+        html: '<div style="background:#22c55e;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-motorcycle"></i></div>',
+        iconSize: [32, 32], iconAnchor: [16, 16]
+    });
+    myMarker = L.marker([startLat, startLng], { icon: driverIcon }).addTo(driverMap).bindPopup('أنت هنا');
+}
+
+// ===== UTILS =====
+function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Periodic GPS update
+setInterval(() => {
+    if (gpsActive && currentDriver && myLat && myLng) {
+        supabase.from('drivers').update({
+            lat: myLat, lng: myLng, last_seen: new Date().toISOString()
+        }).eq('id', currentDriver.id);
+    }
+}, 30000); // Every 30 seconds
+</script>
+</body>
+</html>

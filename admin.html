@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy On Line - لوحة التحكم</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        :root {
+            --navy: #1a2744;
+            --navy-light: #243556;
+            --navy-dark: #0f1a2e;
+            --orange: #f47920;
+            --orange-light: #ff9a4a;
+            --orange-dark: #d4631a;
+            --white: #ffffff;
+            --gray-100: #f0f2f5;
+            --gray-200: #dce0e6;
+            --gray-300: #b0b8c4;
+            --gray-600: #6b7a8d;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --sidebar-w: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--navy-dark);
+            color: var(--white);
+            min-height: 100vh;
+        }
+
+        /* ===== LOGIN SCREEN ===== */
+        .login-screen {
+            position: fixed; inset: 0; z-index: 9999;
+            background: linear-gradient(135deg, var(--navy-dark), var(--navy));
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-screen.hidden { display: none; }
+        .login-box {
+            background: rgba(36, 53, 86, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(244, 121, 32, 0.3);
+            border-radius: 24px; padding: 40px; text-align: center;
+            width: 90%; max-width: 400px;
+        }
+        .login-box img { width: 80px; border-radius: 16px; margin-bottom: 16px; }
+        .login-box h2 { margin-bottom: 8px; color: var(--orange); }
+        .login-box p { color: var(--gray-300); margin-bottom: 24px; font-size: 0.9rem; }
+        .login-box input {
+            width: 100%; padding: 14px 20px; border-radius: 12px;
+            border: 2px solid rgba(244, 121, 32, 0.3);
+            background: rgba(15, 26, 46, 0.7); color: var(--white);
+            font-family: 'Tajawal'; font-size: 1.1rem; text-align: center;
+            outline: none; margin-bottom: 16px; letter-spacing: 4px;
+        }
+        .login-box input:focus { border-color: var(--orange); }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            position: fixed; right: 0; top: 0; bottom: 0;
+            width: var(--sidebar-w); background: var(--navy);
+            border-left: 1px solid rgba(244, 121, 32, 0.15);
+            z-index: 100; overflow-y: auto;
+            transition: transform 0.3s;
+        }
+        .sidebar-header {
+            padding: 20px; display: flex; align-items: center; gap: 12px;
+            border-bottom: 1px solid rgba(244, 121, 32, 0.1);
+        }
+        .sidebar-header img { width: 40px; border-radius: 10px; }
+        .sidebar-header h3 { font-size: 1rem; }
+        .sidebar-header h3 span { color: var(--orange); }
+
+        .sidebar-nav { padding: 12px 0; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 20px; cursor: pointer; color: var(--gray-300);
+            transition: all 0.3s; font-weight: 500; border: none;
+            background: none; width: 100%; font-family: 'Tajawal'; font-size: 0.95rem;
+            text-align: right;
+        }
+        .nav-item:hover { background: rgba(244, 121, 32, 0.1); color: var(--white); }
+        .nav-item.active { color: var(--orange); background: rgba(244, 121, 32, 0.08); border-right: 3px solid var(--orange); }
+        .nav-item i { width: 20px; text-align: center; }
+
+        /* ===== MAIN ===== */
+        .main { margin-right: var(--sidebar-w); padding: 24px; min-height: 100vh; }
+        .page { display: none; animation: fadeIn 0.3s; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Header */
+        .page-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+        }
+        .page-header h1 { font-size: 1.6rem; }
+        .page-header h1 i { color: var(--orange); margin-left: 8px; }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card {
+            background: rgba(36, 53, 86, 0.5);
+            border: 1px solid rgba(244, 121, 32, 0.15);
+            border-radius: 16px; padding: 20px;
+        }
+        .stat-card .stat-icon { font-size: 1.5rem; color: var(--orange); margin-bottom: 8px; }
+        .stat-card .stat-num { font-size: 2rem; font-weight: 800; }
+        .stat-card .stat-label { color: var(--gray-300); font-size: 0.85rem; }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px; border-radius: 10px; border: none;
+            font-family: 'Tajawal'; font-weight: 700; font-size: 0.9rem;
+            cursor: pointer; transition: all 0.3s; display: inline-flex;
+            align-items: center; gap: 6px;
+        }
+        .btn-primary { background: var(--orange); color: var(--white); }
+        .btn-primary:hover { background: var(--orange-dark); }
+        .btn-outline { background: transparent; color: var(--orange); border: 2px solid var(--orange); }
+        .btn-outline:hover { background: var(--orange); color: var(--white); }
+        .btn-sm { padding: 8px 14px; font-size: 0.8rem; }
+        .btn-danger { background: var(--danger); color: var(--white); }
+        .btn-success { background: var(--success); color: var(--white); }
+        .btn-info { background: var(--info); color: var(--white); }
+
+        /* Table */
+        .table-wrap {
+            background: rgba(36, 53, 86, 0.3);
+            border: 1px solid rgba(244, 121, 32, 0.1);
+            border-radius: 16px; overflow: hidden;
+        }
+        .table-toolbar {
+            padding: 16px; display: flex; gap: 12px; flex-wrap: wrap;
+            align-items: center; border-bottom: 1px solid rgba(244, 121, 32, 0.1);
+        }
+        .table-toolbar input, .table-toolbar select {
+            padding: 8px 14px; border-radius: 8px;
+            border: 1px solid rgba(244, 121, 32, 0.3);
+            background: rgba(15, 26, 46, 0.6); color: var(--white);
+            font-family: 'Tajawal'; font-size: 0.9rem; outline: none;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead th {
+            padding: 12px 16px; text-align: right;
+            background: rgba(15, 26, 46, 0.5);
+            color: var(--orange); font-weight: 700; font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        tbody td {
+            padding: 12px 16px; border-bottom: 1px solid rgba(244, 121, 32, 0.05);
+            font-size: 0.9rem; white-space: nowrap;
+        }
+        tbody tr:hover { background: rgba(244, 121, 32, 0.05); }
+        .check-col { width: 40px; text-align: center; }
+        .check-col input { width: 18px; height: 18px; accent-color: var(--orange); cursor: pointer; }
+
+        /* Status badges */
+        .badge {
+            padding: 4px 12px; border-radius: 20px; font-size: 0.78rem;
+            font-weight: 700; display: inline-block;
+        }
+        .badge-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .badge-processing { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .badge-shipped { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+        .badge-out_for_delivery { background: rgba(244, 121, 32, 0.2); color: var(--orange); }
+        .badge-delivered { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .badge-cancelled { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        /* Map */
+        #adminMap { width: 100%; height: 500px; border-radius: 16px; border: 1px solid rgba(244, 121, 32, 0.2); }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 2000;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px);
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--navy); border: 1px solid rgba(244, 121, 32, 0.3);
+            border-radius: 20px; padding: 28px; width: 100%; max-width: 500px;
+            max-height: 90vh; overflow-y: auto; position: relative;
+        }
+        .modal h2 { margin-bottom: 16px; color: var(--orange); font-size: 1.2rem; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 4px; font-weight: 500; color: var(--gray-300); font-size: 0.85rem; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px 14px; border-radius: 8px;
+            border: 1px solid rgba(244, 121, 32, 0.3);
+            background: rgba(15, 26, 46, 0.7); color: var(--white);
+            font-family: 'Tajawal'; font-size: 0.9rem; outline: none;
+        }
+        .modal-close { position: absolute; top: 12px; left: 12px; background: none; border: none; color: var(--gray-300); font-size: 1.4rem; cursor: pointer; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+
+        /* QR */
+        #adminQrReader { width: 100%; border-radius: 12px; overflow: hidden; }
+
+        /* Driver cards */
+        .driver-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .driver-card {
+            background: rgba(36, 53, 86, 0.5);
+            border: 1px solid rgba(244, 121, 32, 0.15);
+            border-radius: 16px; padding: 20px;
+        }
+        .driver-card h3 { color: var(--orange); margin-bottom: 8px; }
+        .driver-card p { color: var(--gray-300); font-size: 0.9rem; margin-bottom: 4px; }
+        .driver-card .online-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: 6px; }
+        .driver-card .online-dot.on { background: var(--success); }
+        .driver-card .online-dot.off { background: var(--gray-600); }
+
+        /* Settings */
+        .settings-section {
+            background: rgba(36, 53, 86, 0.3);
+            border: 1px solid rgba(244, 121, 32, 0.1);
+            border-radius: 16px; padding: 24px; margin-bottom: 20px;
+        }
+        .settings-section h3 { color: var(--orange); margin-bottom: 16px; }
+
+        /* Logo wrapper */
+        .admin-logo-wrap {
+            position: relative; width: 120px; height: 120px;
+            margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;
+        }
+        .admin-logo-wrap img { width: 70px; border-radius: 14px; position: relative; z-index: 2; }
+        .admin-logo-wrap .moto-orbit { position: absolute; inset: 0; animation: spin 8s linear infinite; }
+        .admin-logo-wrap .moto-orbit:nth-child(2) { animation-delay: -2.66s; }
+        .admin-logo-wrap .moto-orbit:nth-child(3) { animation-delay: -5.33s; }
+        .admin-logo-wrap .moto-icon { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 1.1rem; color: var(--orange); }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: var(--success); color: var(--white); padding: 12px 24px;
+            border-radius: 10px; font-weight: 700; z-index: 9999;
+            display: none; font-size: 0.9rem;
+        }
+        .toast.error { background: var(--danger); }
+        .toast.show { display: block; animation: fadeIn 0.3s; }
+
+        /* Print styles */
+        .thermal-preview {
+            background: var(--white); color: #000; padding: 16px;
+            border-radius: 12px; font-family: monospace; font-size: 12px;
+            max-height: 400px; overflow-y: auto;
+        }
+        .thermal-preview .t-order {
+            border-bottom: 1px dashed #000; padding: 12px 0; page-break-after: always;
+        }
+        .thermal-preview .t-order:last-child { border-bottom: none; }
+        .thermal-preview h4 { text-align: center; margin-bottom: 8px; }
+        .thermal-preview p { margin: 2px 0; }
+
+        /* Footer */
+        .admin-footer {
+            text-align: center; padding: 20px; margin-top: 40px;
+            border-top: 1px solid rgba(244, 121, 32, 0.1);
+        }
+        .footer-brand {
+            display: inline-flex; align-items: center; gap: 8px;
+            text-decoration: none; color: var(--gray-300); font-size: 0.85rem;
+        }
+        .footer-brand:hover { color: var(--orange); }
+        .footer-brand img { width: 28px; border-radius: 6px; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 3px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main { margin-right: 0; }
+            .mobile-toggle {
+                position: fixed; top: 12px; right: 12px; z-index: 200;
+                background: var(--orange); color: var(--white); border: none;
+                width: 44px; height: 44px; border-radius: 12px; font-size: 1.2rem; cursor: pointer;
+            }
+            table { font-size: 0.8rem; }
+            thead th, tbody td { padding: 8px 10px; }
+        }
+        @media (min-width: 769px) { .mobile-toggle { display: none; } }
+    </style>
+</head>
+<body>
+
+<!-- MOBILE TOGGLE -->
+<button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-box">
+        <div class="admin-logo-wrap">
+            <div class="moto-orbit"><span class="moto-icon"><i class="fas fa-motorcycle"></i></span></div>
+            <div class="moto-orbit"><span class="moto-icon"><i class="fas fa-motorcycle"></i></span></div>
+            <div class="moto-orbit"><span class="moto-icon"><i class="fas fa-motorcycle"></i></span></div>
+            <img src="bol-logo.png" alt="Logo">
+        </div>
+        <h2>لوحة التحكم</h2>
+        <p>أدخل كلمة المرور للدخول</p>
+        <input type="password" id="loginPass" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+        <br>
+        <button class="btn btn-primary" onclick="doLogin()" style="width:100%; padding: 14px;"><i class="fas fa-sign-in-alt"></i> دخول</button>
+    </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <img src="bol-logo.png" alt="Logo">
+        <h3>Buy On <span>Line</span></h3>
+    </div>
+    <nav class="sidebar-nav">
+        <button class="nav-item active" data-page="dashboard"><i class="fas fa-chart-pie"></i> لوحة القيادة</button>
+        <button class="nav-item" data-page="orders"><i class="fas fa-box"></i> الطلبات</button>
+        <button class="nav-item" data-page="map"><i class="fas fa-map-marked-alt"></i> خريطة المناديب</button>
+        <button class="nav-item" data-page="drivers"><i class="fas fa-motorcycle"></i> إدارة المناديب</button>
+        <button class="nav-item" data-page="print"><i class="fas fa-print"></i> الطباعة الحرارية</button>
+        <button class="nav-item" data-page="messages"><i class="fas fa-envelope"></i> الرسائل</button>
+        <button class="nav-item" data-page="settings"><i class="fas fa-cog"></i> الإعدادات</button>
+    </nav>
+</aside>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="mainContent" style="display:none;">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+        <div class="page-header">
+            <h1><i class="fas fa-chart-pie"></i> لوحة القيادة</h1>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-box"></i></div>
+                <div class="stat-num" id="statTotal">0</div>
+                <div class="stat-label">إجمالي الطلبات</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-num" id="statPending">0</div>
+                <div class="stat-label">قيد الانتظار</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-truck"></i></div>
+                <div class="stat-num" id="statShipped">0</div>
+                <div class="stat-label">تم الشحن</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-num" id="statDelivered">0</div>
+                <div class="stat-label">تم التسليم</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-motorcycle"></i></div>
+                <div class="stat-num" id="statDrivers">0</div>
+                <div class="stat-label">المناديب</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+                <div class="stat-num" id="statRevenue">0</div>
+                <div class="stat-label">الإيرادات (ج.م)</div>
+            </div>
+        </div>
+        <!-- Recent orders -->
+        <div class="table-wrap">
+            <div class="table-toolbar"><h3 style="font-size:1rem;">أحدث الطلبات</h3></div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr>
+                        <th>رقم التتبع</th><th>العميل</th><th>المنطقة</th><th>الحالة</th><th>التاريخ</th>
+                    </tr></thead>
+                    <tbody id="recentOrdersBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="page" id="page-orders">
+        <div class="page-header">
+            <h1><i class="fas fa-box"></i> إدارة الطلبات</h1>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="openAddOrderModal()"><i class="fas fa-plus"></i> إضافة طلب</button>
+                <button class="btn btn-outline" onclick="openAdminQR()"><i class="fas fa-qrcode"></i> مسح QR</button>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <div class="table-toolbar">
+                <input type="text" placeholder="بحث بالاسم أو رقم التتبع..." id="orderSearch" oninput="filterOrders()">
+                <select id="orderStatusFilter" onchange="filterOrders()">
+                    <option value="">كل الحالات</option>
+                    <option value="pending">قيد الانتظار</option>
+                    <option value="processing">قيد التجهيز</option>
+                    <option value="shipped">تم الشحن</option>
+                    <option value="out_for_delivery">في الطريق</option>
+                    <option value="delivered">تم التسليم</option>
+                    <option value="cancelled">ملغي</option>
+                </select>
+            </div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr>
+                        <th class="check-col"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>رقم التتبع</th><th>العميل</th><th>الهاتف</th><th>المنطقة</th>
+                        <th>المبلغ</th><th>الحالة</th><th>المندوب</th><th>إجراءات</th>
+                    </tr></thead>
+                    <tbody id="ordersBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAP -->
+    <div class="page" id="page-map">
+        <div class="page-header">
+            <h1><i class="fas fa-map-marked-alt"></i> خريطة المناديب</h1>
+            <button class="btn btn-primary" onclick="refreshMap()"><i class="fas fa-sync"></i> تحديث</button>
+        </div>
+        <div id="adminMap"></div>
+        <div style="margin-top: 16px;">
+            <h3 style="color: var(--orange); margin-bottom: 12px;">المناديب النشطين</h3>
+            <div id="activeDriversList" class="driver-grid"></div>
+        </div>
+    </div>
+
+    <!-- DRIVERS -->
+    <div class="page" id="page-drivers">
+        <div class="page-header">
+            <h1><i class="fas fa-motorcycle"></i> إدارة المناديب</h1>
+            <button class="btn btn-primary" onclick="openDriverModal()"><i class="fas fa-user-plus"></i> إضافة مندوب</button>
+        </div>
+        <div class="driver-grid" id="driversGrid"></div>
+    </div>
+
+    <!-- THERMAL PRINT -->
+    <div class="page" id="page-print">
+        <div class="page-header">
+            <h1><i class="fas fa-print"></i> الطباعة الحرارية</h1>
+        </div>
+        <p style="color:var(--gray-300); margin-bottom:16px;">حدد الطلبات من صفحة "الطلبات" ثم اضغط طباعة هنا، أو أدخل أرقام التتبع:</p>
+        <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+            <input type="text" id="printCodes" placeholder="أدخل أرقام التتبع مفصولة بفواصل..." style="flex:1; min-width:200px; padding:10px 14px; border-radius:8px; border:1px solid rgba(244,121,32,0.3); background:rgba(15,26,46,0.6); color:var(--white); font-family:'Tajawal'; outline:none;">
+            <button class="btn btn-primary" onclick="generateThermalPrint()"><i class="fas fa-print"></i> تجهيز للطباعة</button>
+            <button class="btn btn-info" onclick="printSelectedOrders()"><i class="fas fa-check-square"></i> طباعة المحدد</button>
+        </div>
+        <div id="thermalPreview"></div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="page" id="page-messages">
+        <div class="page-header">
+            <h1><i class="fas fa-envelope"></i> الرسائل</h1>
+        </div>
+        <div class="table-wrap">
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>الاسم</th><th>الهاتف</th><th>البريد</th><th>الرسالة</th><th>التاريخ</th></tr></thead>
+                    <tbody id="messagesBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+        <div class="page-header">
+            <h1><i class="fas fa-cog"></i> الإعدادات</h1>
+        </div>
+        <div class="settings-section">
+            <h3><i class="fas fa-image"></i> خلفية الصفحة الرئيسية</h3>
+            <p style="color:var(--gray-300); margin-bottom:12px; font-size:0.9rem;">أدخل رابط صورة الخلفية</p>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="bgUrl" placeholder="https://example.com/image.jpg" style="flex:1; padding:10px 14px; border-radius:8px; border:1px solid rgba(244,121,32,0.3); background:rgba(15,26,46,0.6); color:var(--white); font-family:'Tajawal'; outline:none;">
+                <button class="btn btn-primary" onclick="saveBgUrl()"><i class="fas fa-save"></i> حفظ</button>
+            </div>
+        </div>
+        <div class="settings-section">
+            <h3><i class="fas fa-map-pin"></i> موقع الشركة</h3>
+            <p style="color:var(--gray-300); margin-bottom:12px; font-size:0.9rem;">إحداثيات مقر الشركة (تُستخدم لترتيب الطلبات حسب القرب)</p>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <input type="number" step="any" id="companyLat" placeholder="خط العرض (Lat)" style="flex:1; min-width:140px; padding:10px 14px; border-radius:8px; border:1px solid rgba(244,121,32,0.3); background:rgba(15,26,46,0.6); color:var(--white); font-family:'Tajawal'; outline:none;">
+                <input type="number" step="any" id="companyLng" placeholder="خط الطول (Lng)" style="flex:1; min-width:140px; padding:10px 14px; border-radius:8px; border:1px solid rgba(244,121,32,0.3); background:rgba(15,26,46,0.6); color:var(--white); font-family:'Tajawal'; outline:none;">
+                <button class="btn btn-primary" onclick="saveCompanyLocation()"><i class="fas fa-save"></i> حفظ</button>
+            </div>
+        </div>
+        <div class="settings-section">
+            <h3><i class="fas fa-lock"></i> تغيير كلمة المرور</h3>
+            <div style="display:flex; gap:10px;">
+                <input type="password" id="newPass" placeholder="كلمة المرور الجديدة" style="flex:1; padding:10px 14px; border-radius:8px; border:1px solid rgba(244,121,32,0.3); background:rgba(15,26,46,0.6); color:var(--white); font-family:'Tajawal'; outline:none;">
+                <button class="btn btn-primary" onclick="changePassword()"><i class="fas fa-save"></i> تغيير</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="admin-footer">
+        <a href="https://zero-nine-rose.vercel.app/" target="_blank" class="footer-brand">
+            <span>تم الإنشاء والتطوير من</span>
+            <img src="zn-logo.png" alt="Zero-Nine">
+            <strong style="color: var(--orange);">Zero-Nine</strong>
+        </a>
+    </div>
+</div>
+
+<!-- ADD ORDER MODAL -->
+<div class="modal-overlay" id="addOrderModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('addOrderModal')">&times;</button>
+        <h2><i class="fas fa-plus-circle"></i> إضافة طلب</h2>
+        <div class="form-group"><label>اسم العميل</label><input id="aoName"></div>
+        <div class="form-group"><label>الهاتف</label><input id="aoPhone"></div>
+        <div class="form-group"><label>العنوان</label><input id="aoAddress"></div>
+        <div class="form-group"><label>المنطقة</label><input id="aoArea"></div>
+        <div class="form-group"><label>الوصف</label><textarea id="aoDesc" rows="2"></textarea></div>
+        <div class="form-group"><label>المبلغ</label><input type="number" id="aoAmount"></div>
+        <div class="modal-btns">
+            <button class="btn btn-primary" onclick="adminAddOrder()" style="flex:1;"><i class="fas fa-check"></i> إضافة</button>
+            <button class="btn btn-outline" onclick="closeModal('addOrderModal')">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT ORDER MODAL -->
+<div class="modal-overlay" id="editOrderModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('editOrderModal')">&times;</button>
+        <h2><i class="fas fa-edit"></i> تعديل الطلب</h2>
+        <input type="hidden" id="eoId">
+        <div class="form-group"><label>الحالة</label>
+            <select id="eoStatus">
+                <option value="pending">قيد الانتظار</option>
+                <option value="processing">قيد التجهيز</option>
+                <option value="shipped">تم الشحن</option>
+                <option value="out_for_delivery">في الطريق للتسليم</option>
+                <option value="delivered">تم التسليم</option>
+                <option value="cancelled">ملغي</option>
+            </select>
+        </div>
+        <div class="form-group"><label>المندوب</label>
+            <select id="eoDriver"><option value="">-- بدون مندوب --</option></select>
+        </div>
+        <div class="form-group"><label>ملاحظات</label><textarea id="eoNotes" rows="2"></textarea></div>
+        <div class="modal-btns">
+            <button class="btn btn-primary" onclick="saveOrderEdit()" style="flex:1;"><i class="fas fa-save"></i> حفظ</button>
+            <button class="btn btn-outline" onclick="closeModal('editOrderModal')">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- DRIVER MODAL -->
+<div class="modal-overlay" id="driverModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('driverModal')">&times;</button>
+        <h2 id="driverModalTitle"><i class="fas fa-user-plus"></i> إضافة مندوب</h2>
+        <input type="hidden" id="dmId">
+        <div class="form-group"><label>اسم المندوب</label><input id="dmName"></div>
+        <div class="form-group"><label>رقم الهاتف</label><input id="dmPhone"></div>
+        <div class="form-group"><label>رقم اللوحة المعدنية</label><input id="dmPlate"></div>
+        <div class="form-group"><label>رقم تسجيل الدخول (فريد)</label><input id="dmLoginCode"></div>
+        <div class="modal-btns">
+            <button class="btn btn-primary" onclick="saveDriver()" style="flex:1;"><i class="fas fa-save"></i> حفظ</button>
+            <button class="btn btn-outline" onclick="closeModal('driverModal')">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-overlay" id="adminQRModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeAdminQR()">&times;</button>
+        <h2><i class="fas fa-qrcode"></i> مسح QR</h2>
+        <div id="adminQrReader"></div>
+        <div id="adminQrResult" style="display:none; margin-top:12px; padding:12px; background:rgba(34,197,94,0.1); border-radius:10px;">
+            <p style="color:var(--success); font-weight:700;" id="adminQrResultText"></p>
+        </div>
+        <button class="btn btn-outline" onclick="closeAdminQR()" style="margin-top:12px; width:100%;">إغلاق</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CONFIG =====
+const SUPABASE_URL = 'https://sbfwmctjxrddwnldjafw.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_E_YrTw2zDR--HcpUUAewSQ_FUYLYZqU';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const ADMIN_PASS_KEY = 'bol_admin_pass';
+const DEFAULT_PASS = 'admin123';
+
+let allOrders = [];
+let allDrivers = [];
+let map = null;
+let driverMarkers = {};
+let companyMarker = null;
+let companyLat = 29.8510; // Default: Badrashin area
+let companyLng = 31.2765;
+let adminQrScanner = null;
+
+// ===== LOGIN =====
+function doLogin() {
+    const pass = document.getElementById('loginPass').value;
+    const stored = localStorage.getItem(ADMIN_PASS_KEY) || DEFAULT_PASS;
+    if (pass === stored) {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('mainContent').style.display = 'block';
+        initAdmin();
+    } else {
+        showToast('كلمة المرور غير صحيحة', true);
+    }
+}
+
+// ===== NAV =====
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        item.classList.add('active');
+        document.getElementById('page-' + item.dataset.page).classList.add('active');
+        document.querySelector('.sidebar').classList.remove('open');
+        if (item.dataset.page === 'map') setTimeout(() => { if (map) map.invalidateSize(); }, 100);
+    });
+});
+
+// ===== INIT =====
+async function initAdmin() {
+    await loadSettings();
+    await loadOrders();
+    await loadDrivers();
+    await loadMessages();
+    initMap();
+    // Realtime subscription
+    supabase.channel('orders-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => loadOrders()).subscribe();
+    supabase.channel('drivers-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => { loadDrivers(); refreshMap(); }).subscribe();
+}
+
+// ===== SETTINGS =====
+async function loadSettings() {
+    try {
+        const { data } = await supabase.from('settings').select('*');
+        if (data) {
+            data.forEach(s => {
+                if (s.key === 'hero_bg') document.getElementById('bgUrl').value = s.value || '';
+                if (s.key === 'company_lat') { companyLat = parseFloat(s.value); document.getElementById('companyLat').value = s.value; }
+                if (s.key === 'company_lng') { companyLng = parseFloat(s.value); document.getElementById('companyLng').value = s.value; }
+            });
+        }
+    } catch(e) {}
+}
+
+async function saveSetting(key, value) {
+    const { data } = await supabase.from('settings').select('id').eq('key', key).single();
+    if (data) {
+        await supabase.from('settings').update({ value }).eq('key', key);
+    } else {
+        await supabase.from('settings').insert({ key, value });
+    }
+}
+
+async function saveBgUrl() {
+    const url = document.getElementById('bgUrl').value.trim();
+    await saveSetting('hero_bg', url);
+    showToast('تم حفظ خلفية الموقع');
+}
+
+async function saveCompanyLocation() {
+    const lat = document.getElementById('companyLat').value;
+    const lng = document.getElementById('companyLng').value;
+    if (!lat || !lng) return showToast('أدخل الإحداثيات', true);
+    await saveSetting('company_lat', lat);
+    await saveSetting('company_lng', lng);
+    companyLat = parseFloat(lat); companyLng = parseFloat(lng);
+    showToast('تم حفظ موقع الشركة');
+    if (map && companyMarker) { companyMarker.setLatLng([companyLat, companyLng]); map.setView([companyLat, companyLng], 12); }
+}
+
+function changePassword() {
+    const np = document.getElementById('newPass').value;
+    if (!np || np.length < 4) return showToast('كلمة المرور قصيرة جداً', true);
+    localStorage.setItem(ADMIN_PASS_KEY, np);
+    document.getElementById('newPass').value = '';
+    showToast('تم تغيير كلمة المرور');
+}
+
+// ===== ORDERS =====
+async function loadOrders() {
+    const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+    allOrders = data || [];
+    renderOrders();
+    updateStats();
+    renderRecentOrders();
+}
+
+const statusTextMap = {
+    'pending': 'قيد الانتظار', 'processing': 'قيد التجهيز',
+    'shipped': 'تم الشحن', 'out_for_delivery': 'في الطريق',
+    'delivered': 'تم التسليم', 'cancelled': 'ملغي'
+};
+
+function renderOrders() {
+    const search = (document.getElementById('orderSearch')?.value || '').toLowerCase();
+    const statusF = document.getElementById('orderStatusFilter')?.value || '';
+    let filtered = allOrders.filter(o => {
+        const matchSearch = !search || o.customer_name?.toLowerCase().includes(search) || o.tracking_code?.toLowerCase().includes(search);
+        const matchStatus = !statusF || o.status === statusF;
+        return matchSearch && matchStatus;
+    });
+    const tbody = document.getElementById('ordersBody');
+    tbody.innerHTML = filtered.map(o => {
+        const driverName = allDrivers.find(d => d.id === o.driver_id)?.name || '-';
+        return `<tr>
+            <td class="check-col"><input type="checkbox" class="order-check" value="${o.id}" data-code="${o.tracking_code}"></td>
+            <td><strong style="color:var(--orange)">${o.tracking_code}</strong></td>
+            <td>${o.customer_name}</td>
+            <td>${o.customer_phone || '-'}</td>
+            <td>${o.area || '-'}</td>
+            <td>${o.amount || 0} ج.م</td>
+            <td><span class="badge badge-${o.status}">${statusTextMap[o.status] || o.status}</span></td>
+            <td>${driverName}</td>
+            <td>
+                <button class="btn btn-sm btn-info" onclick="editOrder('${o.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger" onclick="deleteOrder('${o.id}')"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function filterOrders() { renderOrders(); }
+
+function toggleSelectAll() {
+    const checked = document.getElementById('selectAll').checked;
+    document.querySelectorAll('.order-check').forEach(c => c.checked = checked);
+}
+
+function renderRecentOrders() {
+    const recent = allOrders.slice(0, 8);
+    document.getElementById('recentOrdersBody').innerHTML = recent.map(o => `<tr>
+        <td><strong style="color:var(--orange)">${o.tracking_code}</strong></td>
+        <td>${o.customer_name}</td>
+        <td>${o.area || '-'}</td>
+        <td><span class="badge badge-${o.status}">${statusTextMap[o.status] || o.status}</span></td>
+        <td>${new Date(o.created_at).toLocaleDateString('ar-EG')}</td>
+    </tr>`).join('');
+}
+
+function updateStats() {
+    document.getElementById('statTotal').textContent = allOrders.length;
+    document.getElementById('statPending').textContent = allOrders.filter(o => o.status === 'pending' || o.status === 'processing').length;
+    document.getElementById('statShipped').textContent = allOrders.filter(o => o.status === 'shipped' || o.status === 'out_for_delivery').length;
+    document.getElementById('statDelivered').textContent = allOrders.filter(o => o.status === 'delivered').length;
+    document.getElementById('statDrivers').textContent = allDrivers.length;
+    document.getElementById('statRevenue').textContent = allOrders.filter(o => o.status === 'delivered').reduce((s, o) => s + (o.amount || 0), 0).toLocaleString();
+}
+
+function openAddOrderModal() { closeModal('addOrderModal'); document.getElementById('addOrderModal').classList.add('show'); }
+
+async function adminAddOrder() {
+    const name = document.getElementById('aoName').value.trim();
+    const phone = document.getElementById('aoPhone').value.trim();
+    const address = document.getElementById('aoAddress').value.trim();
+    const area = document.getElementById('aoArea').value.trim();
+    const desc = document.getElementById('aoDesc').value.trim();
+    const amount = parseFloat(document.getElementById('aoAmount').value) || 0;
+    if (!name) return showToast('أدخل اسم العميل', true);
+    const tracking_code = 'BOL-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+    try {
+        await supabase.from('orders').insert({ tracking_code, customer_name: name, customer_phone: phone, address, area, description: desc, amount, status: 'pending', source: 'admin' });
+        showToast('تم إضافة الطلب: ' + tracking_code);
+        closeModal('addOrderModal');
+        ['aoName','aoPhone','aoAddress','aoArea','aoDesc','aoAmount'].forEach(id => document.getElementById(id).value = '');
+        loadOrders();
+    } catch(e) { showToast('خطأ: ' + e.message, true); }
+}
+
+function editOrder(id) {
+    const o = allOrders.find(x => x.id == id);
+    if (!o) return;
+    document.getElementById('eoId').value = o.id;
+    document.getElementById('eoStatus').value = o.status;
+    document.getElementById('eoNotes').value = o.notes || '';
+    // Populate driver dropdown
+    const dd = document.getElementById('eoDriver');
+    dd.innerHTML = '<option value="">-- بدون مندوب --</option>' + allDrivers.map(d => `<option value="${d.id}" ${d.id == o.driver_id ? 'selected' : ''}>${d.name}</option>`).join('');
+    document.getElementById('editOrderModal').classList.add('show');
+}
+
+async function saveOrderEdit() {
+    const id = document.getElementById('eoId').value;
+    const status = document.getElementById('eoStatus').value;
+    const driver_id = document.getElementById('eoDriver').value || null;
+    const notes = document.getElementById('eoNotes').value;
+    await supabase.from('orders').update({ status, driver_id, notes }).eq('id', id);
+    showToast('تم تحديث الطلب');
+    closeModal('editOrderModal');
+    loadOrders();
+}
+
+async function deleteOrder(id) {
+    if (!confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
+    await supabase.from('orders').delete().eq('id', id);
+    showToast('تم حذف الطلب');
+    loadOrders();
+}
+
+// ===== DRIVERS =====
+async function loadDrivers() {
+    const { data } = await supabase.from('drivers').select('*').order('created_at', { ascending: false });
+    allDrivers = data || [];
+    renderDrivers();
+    updateStats();
+}
+
+function renderDrivers() {
+    const grid = document.getElementById('driversGrid');
+    grid.innerHTML = allDrivers.map(d => {
+        const isOnline = d.last_seen && (Date.now() - new Date(d.last_seen).getTime()) < 300000; // 5 min
+        return `<div class="driver-card">
+            <h3><i class="fas fa-user"></i> ${d.name} <span class="online-dot ${isOnline ? 'on' : 'off'}"></span></h3>
+            <p><i class="fas fa-phone" style="color:var(--orange); width:20px;"></i> ${d.phone || '-'}</p>
+            <p><i class="fas fa-id-badge" style="color:var(--orange); width:20px;"></i> كود الدخول: <strong>${d.login_code}</strong></p>
+            <p><i class="fas fa-car" style="color:var(--orange); width:20px;"></i> لوحة: ${d.plate_number || '-'}</p>
+            <p><i class="fas fa-hashtag" style="color:var(--orange); width:20px;"></i> ID: ${d.id}</p>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button class="btn btn-sm btn-info" onclick="editDriver('${d.id}')"><i class="fas fa-edit"></i> تعديل</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteDriver('${d.id}')"><i class="fas fa-trash"></i> حذف</button>
+            </div>
+        </div>`;
+    }).join('') || '<p style="color:var(--gray-300);">لا يوجد مناديب بعد.</p>';
+}
+
+function openDriverModal(driverId = null) {
+    document.getElementById('dmId').value = '';
+    ['dmName','dmPhone','dmPlate','dmLoginCode'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('driverModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> إضافة مندوب';
+    if (driverId) {
+        const d = allDrivers.find(x => x.id == driverId);
+        if (d) {
+            document.getElementById('dmId').value = d.id;
+            document.getElementById('dmName').value = d.name;
+            document.getElementById('dmPhone').value = d.phone || '';
+            document.getElementById('dmPlate').value = d.plate_number || '';
+            document.getElementById('dmLoginCode').value = d.login_code || '';
+            document.getElementById('driverModalTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل مندوب';
+        }
+    }
+    document.getElementById('driverModal').classList.add('show');
+}
+
+function editDriver(id) { openDriverModal(id); }
+
+async function saveDriver() {
+    const id = document.getElementById('dmId').value;
+    const name = document.getElementById('dmName').value.trim();
+    const phone = document.getElementById('dmPhone').value.trim();
+    const plate_number = document.getElementById('dmPlate').value.trim();
+    const login_code = document.getElementById('dmLoginCode').value.trim();
+    if (!name || !login_code) return showToast('أدخل الاسم وكود الدخول', true);
+
+    if (id) {
+        await supabase.from('drivers').update({ name, phone, plate_number, login_code }).eq('id', id);
+        showToast('تم تحديث بيانات المندوب');
+    } else {
+        await supabase.from('drivers').insert({ name, phone, plate_number, login_code });
+        showToast('تم إضافة المندوب');
+    }
+    closeModal('driverModal');
+    loadDrivers();
+}
+
+async function deleteDriver(id) {
+    if (!confirm('هل أنت متأكد من حذف هذا المندوب؟')) return;
+    await supabase.from('drivers').delete().eq('id', id);
+    showToast('تم حذف المندوب');
+    loadDrivers();
+}
+
+// ===== MAP =====
+function initMap() {
+    if (map) return;
+    map = L.map('adminMap').setView([companyLat, companyLng], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // Company marker
+    const companyIcon = L.divIcon({
+        className: '',
+        html: '<div style="background:var(--orange);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fas fa-building"></i></div>',
+        iconSize: [36, 36], iconAnchor: [18, 18]
+    });
+    companyMarker = L.marker([companyLat, companyLng], { icon: companyIcon }).addTo(map).bindPopup('<strong>مقر الشركة</strong>');
+    refreshMap();
+}
+
+async function refreshMap() {
+    if (!map) return;
+    // Clear old markers
+    Object.values(driverMarkers).forEach(m => map.removeLayer(m));
+    driverMarkers = {};
+
+    const activeList = document.getElementById('activeDriversList');
+    let activeHtml = '';
+
+    allDrivers.forEach(d => {
+        if (d.lat && d.lng) {
+            const isOnline = d.last_seen && (Date.now() - new Date(d.last_seen).getTime()) < 300000;
+            const color = isOnline ? '#22c55e' : '#6b7a8d';
+            const driverIcon = L.divIcon({
+                className: '',
+                html: `<div style="background:${color};color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);"><i class="fas fa-motorcycle"></i></div>`,
+                iconSize: [32, 32], iconAnchor: [16, 16]
+            });
+            driverMarkers[d.id] = L.marker([d.lat, d.lng], { icon: driverIcon }).addTo(map).bindPopup(`<strong>${d.name}</strong><br>${d.phone || ''}`);
+            activeHtml += `<div class="driver-card" style="padding:12px;">
+                <h3 style="font-size:0.95rem;">${d.name} <span class="online-dot ${isOnline ? 'on' : 'off'}"></span></h3>
+                <p style="font-size:0.8rem;"><i class="fas fa-map-pin" style="color:var(--orange);"></i> ${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}</p>
+            </div>`;
+        }
+    });
+    activeList.innerHTML = activeHtml || '<p style="color:var(--gray-300);">لا يوجد مناديب نشطين حالياً</p>';
+}
+
+// ===== THERMAL PRINT =====
+async function generateThermalPrint() {
+    const codes = document.getElementById('printCodes').value.split(',').map(c => c.trim()).filter(Boolean);
+    if (!codes.length) return showToast('أدخل أرقام تتبع', true);
+    const orders = allOrders.filter(o => codes.includes(o.tracking_code));
+    if (!orders.length) return showToast('لم يتم العثور على طلبات', true);
+    renderThermalPreview(orders);
+}
+
+function printSelectedOrders() {
+    const checked = [...document.querySelectorAll('.order-check:checked')];
+    if (!checked.length) return showToast('حدد طلبات أولاً', true);
+    const codes = checked.map(c => c.dataset.code);
+    const orders = allOrders.filter(o => codes.includes(o.tracking_code));
+    renderThermalPreview(orders);
+}
+
+function renderThermalPreview(orders) {
+    const html = `<div class="thermal-preview" id="printArea">
+        ${orders.map(o => `<div class="t-order">
+            <h4>🚚 Buy On Line - Shipping</h4>
+            <p><strong>رقم التتبع:</strong> ${o.tracking_code}</p>
+            <p><strong>العميل:</strong> ${o.customer_name}</p>
+            <p><strong>الهاتف:</strong> ${o.customer_phone || '-'}</p>
+            <p><strong>العنوان:</strong> ${o.address || '-'}</p>
+            <p><strong>المنطقة:</strong> ${o.area || '-'}</p>
+            <p><strong>المبلغ:</strong> ${o.amount || 0} ج.م</p>
+            <p><strong>الوصف:</strong> ${o.description || '-'}</p>
+            <p style="text-align:center; margin-top:8px;">━━━━━━━━━━━━━━━</p>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-primary" onclick="doPrint()" style="margin-top:12px;"><i class="fas fa-print"></i> طباعة الآن</button>`;
+    document.getElementById('thermalPreview').innerHTML = html;
+}
+
+function doPrint() {
+    const printContent = document.getElementById('printArea').innerHTML;
+    const win = window.open('', '_blank');
+    win.document.write(`<html dir="rtl"><head><style>
+        body { font-family: monospace; font-size: 12px; padding: 0; margin: 0; }
+        .t-order { border-bottom: 1px dashed #000; padding: 10px 5px; page-break-after: always; }
+        h4 { text-align: center; margin-bottom: 8px; } p { margin: 2px 0; }
+    </style></head><body>${printContent}</body></html>`);
+    win.document.close();
+    win.print();
+}
+
+// ===== MESSAGES =====
+async function loadMessages() {
+    const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
+    const msgs = data || [];
+    document.getElementById('messagesBody').innerHTML = msgs.map(m => `<tr>
+        <td>${m.name}</td><td>${m.phone || '-'}</td><td>${m.email || '-'}</td>
+        <td style="max-width:200px; white-space:normal;">${m.message}</td>
+        <td>${new Date(m.created_at).toLocaleDateString('ar-EG')}</td>
+    </tr>`).join('') || '<tr><td colspan="5" style="text-align:center; color:var(--gray-300);">لا توجد رسائل</td></tr>';
+}
+
+// ===== QR SCANNER =====
+function openAdminQR() {
+    document.getElementById('adminQRModal').classList.add('show');
+    document.getElementById('adminQrResult').style.display = 'none';
+    setTimeout(() => {
+        if (!adminQrScanner) adminQrScanner = new Html5Qrcode("adminQrReader");
+        adminQrScanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            async (text) => {
+                adminQrScanner.stop();
+                document.getElementById('adminQrResult').style.display = 'block';
+                // Try as JSON order
+                try {
+                    const d = JSON.parse(text);
+                    const tc = 'BOL-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+                    await supabase.from('orders').insert({ tracking_code: tc, customer_name: d.name || 'QR', customer_phone: d.phone || '', address: d.address || '', area: d.area || '', description: d.desc || '', amount: d.amount || 0, status: 'pending', source: 'admin_qr' });
+                    document.getElementById('adminQrResultText').innerHTML = `<i class="fas fa-check-circle"></i> تم إضافة الطلب: ${tc}`;
+                    loadOrders();
+                } catch(e) {
+                    // Treat as tracking code search
+                    document.getElementById('adminQrResultText').innerHTML = `<i class="fas fa-barcode"></i> كود: ${text}`;
+                    document.getElementById('orderSearch').value = text;
+                    filterOrders();
+                }
+            }
+        ).catch(e => console.log('QR:', e));
+    }, 300);
+}
+
+function closeAdminQR() {
+    if (adminQrScanner) adminQrScanner.stop().catch(() => {});
+    closeModal('adminQRModal');
+}
+
+// ===== UTILS =====
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
