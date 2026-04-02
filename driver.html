@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Buy On Line - تطبيق المندوب</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root{--navy:#1a2744;--orange:#f47920;--orange-d:#d4631a;--bg:#f3f5f9;--card:#fff;--text:#1a2744;--text-l:#5a6a80;--text-m:#8d9bb0;--border:#e2e7ef;--success:#16a34a;--danger:#dc2626;--shadow:0 4px 20px rgba(26,39,68,.07);--shadow-lg:0 10px 36px rgba(26,39,68,.1)}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+        .login{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#fff,#f0f4fb,#fef3eb);display:flex;align-items:center;justify-content:center;padding:20px}
+        .login.hid{display:none}
+        .lbox{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:32px;text-align:center;width:100%;max-width:360px;box-shadow:var(--shadow-lg)}
+        .lw{position:relative;width:130px;height:130px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center}
+        .lw img{width:72px;border-radius:16px;position:relative;z-index:2;filter:drop-shadow(0 6px 18px rgba(244,121,32,.3))}
+        .mo{position:absolute;inset:0;animation:spin 8s linear infinite}.mo:nth-child(2){animation-delay:-2.66s}.mo:nth-child(3){animation-delay:-5.33s}
+        .mi{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:1.2rem;color:var(--orange)}
+        @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+        .lbox h2{color:var(--navy);margin-bottom:6px;font-family:'Cairo',sans-serif;font-size:1.2rem}
+        .lbox p{color:var(--text-l);margin-bottom:16px;font-size:.88rem}
+        .lbox input{width:100%;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-family:'Tajawal';font-size:1.2rem;text-align:center;outline:none;letter-spacing:6px;margin-bottom:14px}
+        .lbox input:focus{border-color:var(--orange)}
+        .lerr{color:var(--danger);font-size:.85rem;margin-bottom:8px;display:none;font-weight:700}
+        .lerr.show{display:block;animation:shake .4s}
+        @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+        .btn{padding:12px 24px;border-radius:12px;border:none;font-family:'Tajawal';font-weight:700;font-size:.95rem;cursor:pointer;transition:.3s;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+        .btn-p{background:var(--orange);color:#fff}.btn-p:hover{background:var(--orange-d)}
+        .btn-sc{background:var(--success);color:#fff}.btn-dg{background:var(--danger);color:#fff}
+        .btn-o{background:transparent;color:var(--orange);border:2px solid var(--orange)}.btn-o:hover{background:var(--orange);color:#fff}
+        .btn-sm{padding:8px 14px;font-size:.83rem}
+
+        .app{display:none}.app.show{display:block}
+        .ah{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+        .hb{display:flex;align-items:center;gap:8px}.hb img{width:32px;border-radius:8px}
+        .hb h3{font-size:.9rem;font-family:'Cairo',sans-serif}.hb h3 span{color:var(--orange)}
+        .hu{display:flex;align-items:center;gap:8px}
+        .hu .un{font-size:.82rem;color:var(--text-l)}
+        .hu .lo{background:none;border:none;color:var(--danger);cursor:pointer;font-size:1rem}
+
+        .gbar{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--card);border-bottom:1px solid var(--border)}
+        .gs{display:flex;align-items:center;gap:8px;font-size:.83rem;color:var(--text-l)}
+        .gd{width:10px;height:10px;border-radius:50%}.gd.on{background:var(--success);animation:pulse 2s infinite}.gd.off{background:var(--danger)}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+        .dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px}
+        .ds{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;box-shadow:var(--shadow)}
+        .ds .n{font-size:1.5rem;font-weight:800;color:var(--orange)}.ds .l{font-size:.72rem;color:var(--text-m);margin-top:2px}
+
+        #driverMap{width:calc(100% - 32px);height:180px;margin:0 16px 14px;border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow)}
+
+        .os{padding:0 16px 16px}
+        .os h3{font-size:1rem;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-family:'Cairo',sans-serif}.os h3 i{color:var(--orange)}
+        .oc2{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);transition:.3s}
+        .oc2:hover{border-color:var(--orange)}
+        .ot{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+        .ocode{color:var(--orange);font-weight:700;font-size:.88rem}
+        .badge{padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700}
+        .b-pending{background:#fef3c7;color:#b45309}.b-processing{background:#dbeafe;color:#1d4ed8}
+        .b-shipped{background:#ede9fe;color:#6d28d9}.b-out_for_delivery{background:#ffedd5;color:#c2410c}
+        .b-delivered{background:#dcfce7;color:#15803d}
+        .od{display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;font-size:.86rem}
+        .od i{color:var(--orange);width:16px;margin-top:2px;font-size:.78rem}
+        .od span{color:var(--text-l)}
+        .oa{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+
+        .empty{text-align:center;padding:36px 20px;color:var(--text-m)}
+        .empty i{font-size:2.5rem;margin-bottom:10px}
+
+        .af{text-align:center;padding:18px 16px;border-top:1px solid var(--border)}
+        .fb{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text-m);font-size:.78rem;transition:.3s}
+        .fb:hover{color:var(--orange)}.fb img{width:22px;border-radius:5px}
+
+        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--success);color:#fff;padding:12px 22px;border-radius:10px;font-weight:700;z-index:9999;display:none;font-size:.88rem;box-shadow:var(--shadow-lg)}
+        .toast.err{background:var(--danger)}.toast.show{display:block;animation:fadeIn .3s}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--orange);border-radius:2px}
+    </style>
+</head>
+<body>
+
+<div class="login" id="loginScreen">
+    <div class="lbox">
+        <div class="lw">
+            <div class="mo"><span class="mi"><i class="fas fa-motorcycle"></i></span></div>
+            <div class="mo"><span class="mi"><i class="fas fa-motorcycle"></i></span></div>
+            <div class="mo"><span class="mi"><i class="fas fa-motorcycle"></i></span></div>
+            <img src="bol-logo.png" alt="Logo">
+        </div>
+        <h2>تطبيق المندوب</h2>
+        <p>أدخل رقم تسجيل الدخول الخاص بك</p>
+        <div class="lerr" id="loginErr">رقم غير صحيح</div>
+        <input type="text" id="loginCode" placeholder="•••••" maxlength="20" autofocus>
+        <button class="btn btn-p" id="loginBtn" style="width:100%;padding:14px"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
+    </div>
+</div>
+
+<div class="app" id="app">
+    <div class="ah"><div class="hb"><img src="bol-logo.png" alt="Logo"><h3>Buy On <span>Line</span></h3></div><div class="hu"><span class="un" id="drvName"></span><button class="lo" onclick="logout()" title="خروج"><i class="fas fa-sign-out-alt"></i></button></div></div>
+    <div class="gbar"><div class="gs"><span class="gd" id="gpsDot"></span><span id="gpsTxt">جاري تحديد الموقع...</span></div><button class="btn btn-sm btn-o" id="gpsBtn" onclick="togGPS()"><i class="fas fa-location-arrow"></i> تفعيل</button></div>
+    <div class="dstats"><div class="ds"><div class="n" id="dsAll">0</div><div class="l">الكل</div></div><div class="ds"><div class="n" id="dsAct">0</div><div class="l">جاري</div></div><div class="ds"><div class="n" id="dsDone">0</div><div class="l">مسلّم</div></div></div>
+    <div id="driverMap"></div>
+    <div class="os"><h3><i class="fas fa-box"></i> طلباتك</h3><div id="ordersList"></div></div>
+    <div class="af"><a href="https://zero-nine-rose.vercel.app/" target="_blank" class="fb"><span>تم الإنشاء والتطوير من</span><img src="zn-logo.png" alt="Zero-Nine"><strong style="color:var(--orange)">Zero-Nine</strong></a></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://aeizymcxnhypvmsdpjum.supabase.co';
+const SB_KEY='sb_publishable_npCG48jSMhuaSTapcEtbcw_KBA1psfK';
+let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn('SB:',e)}
+
+let drv=null,myO=[],gpsW=null,gpsOn=false,myLat=null,myLng=null,dMap=null,myMk=null,cLat=29.851,cLng=31.2765;
+const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',cancelled:'ملغي'};
+
+// ===== LOGIN (FIXED) =====
+document.getElementById('loginBtn').addEventListener('click',doLogin);
+document.getElementById('loginCode').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+async function doLogin(){
+    const code=document.getElementById('loginCode').value.trim();
+    const errEl=document.getElementById('loginErr');
+    if(!code){errEl.textContent='أدخل الكود';errEl.classList.add('show');return}
+    try{
+        if(!sb)throw new Error('لا يوجد اتصال بقاعدة البيانات');
+        const{data,error}=await sb.from('drivers').select('*').eq('login_code',code).single();
+        if(error||!data){errEl.textContent='رقم غير صحيح';errEl.classList.add('show');document.getElementById('loginCode').value='';document.getElementById('loginCode').focus();return}
+        drv=data;errEl.classList.remove('show');
+        document.getElementById('loginScreen').classList.add('hid');
+        document.getElementById('app').classList.add('show');
+        document.getElementById('drvName').textContent=data.name;
+        try{await loadLoc()}catch(e){}
+        try{await loadMyO()}catch(e){}
+        try{initMap()}catch(e){}
+        startGPS();
+        try{sb.channel('my-o').on('postgres_changes',{event:'*',schema:'public',table:'orders',filter:`driver_id=eq.${drv.id}`},()=>loadMyO()).subscribe()}catch(e){}
+    }catch(e){errEl.textContent=e.message;errEl.classList.add('show')}
+}
+
+function logout(){stopGPS();drv=null;document.getElementById('loginScreen').classList.remove('hid');document.getElementById('app').classList.remove('show');document.getElementById('loginCode').value=''}
+
+async function loadLoc(){if(!sb)return;const{data}=await sb.from('settings').select('*').in('key',['company_lat','company_lng']);if(data)data.forEach(s=>{if(s.key==='company_lat')cLat=parseFloat(s.value);if(s.key==='company_lng')cLng=parseFloat(s.value)})}
+
+async function loadMyO(){if(!drv||!sb)return;const{data}=await sb.from('orders').select('*').eq('driver_id',drv.id).order('created_at',{ascending:false});myO=data||[];renderO();upStats()}
+
+function renderO(){
+    const list=document.getElementById('ordersList');
+    const act=myO.filter(o=>o.status!=='delivered'&&o.status!=='cancelled');
+    const done=myO.filter(o=>o.status==='delivered');
+    if(!myO.length){list.innerHTML='<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد طلبات حالياً</p></div>';return}
+    let h='';
+    act.forEach(o=>{h+=oCard(o,true)});
+    if(done.length){h+=`<h3 style="margin:18px 0 10px;font-size:.9rem;color:var(--success)"><i class="fas fa-check-circle"></i> مسلّمة</h3>`;done.forEach(o=>{h+=oCard(o,false)})}
+    list.innerHTML=h;
+}
+
+function oCard(o,showA){
+    return`<div class="oc2"><div class="ot"><span class="ocode"><i class="fas fa-barcode"></i> ${o.tracking_code}</span><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></div>
+    <div class="od"><i class="fas fa-user"></i><span>${o.customer_name}</span></div>
+    <div class="od"><i class="fas fa-phone"></i><span>${o.customer_phone||'-'}</span></div>
+    <div class="od"><i class="fas fa-map-marker-alt"></i><span>${o.address||'-'}</span></div>
+    <div class="od"><i class="fas fa-map-pin"></i><span>${o.area||'-'}</span></div>
+    <div class="od"><i class="fas fa-money-bill"></i><span>${o.amount||0} ج.م</span></div>
+    ${o.description?`<div class="od"><i class="fas fa-clipboard"></i><span>${o.description}</span></div>`:''}
+    ${showA?`<div class="oa">
+    ${o.status==='pending'||o.status==='processing'?`<button class="btn btn-sm btn-p" onclick="upSt('${o.id}','shipped')"><i class="fas fa-truck"></i> شحن</button>`:''}
+    ${o.status==='shipped'?`<button class="btn btn-sm btn-p" onclick="upSt('${o.id}','out_for_delivery')"><i class="fas fa-motorcycle"></i> في الطريق</button>`:''}
+    ${o.status==='out_for_delivery'?`<button class="btn btn-sm btn-sc" onclick="upSt('${o.id}','delivered')"><i class="fas fa-check"></i> تم التسليم</button>`:''}
+    <a href="tel:${o.customer_phone}" class="btn btn-sm btn-o"><i class="fas fa-phone"></i></a>
+    ${o.customer_phone?`<a href="https://wa.me/2${o.customer_phone}" target="_blank" class="btn btn-sm btn-sc" style="background:#25D366"><i class="fab fa-whatsapp"></i></a>`:''}
+    </div>`:''}</div>`;
+}
+
+async function upSt(id,st){if(!sb)return;await sb.from('orders').update({status:st}).eq('id',id);toast('تم التحديث');loadMyO()}
+function upStats(){const act=myO.filter(o=>o.status!=='delivered'&&o.status!=='cancelled');const done=myO.filter(o=>o.status==='delivered');document.getElementById('dsAll').textContent=myO.length;document.getElementById('dsAct').textContent=act.length;document.getElementById('dsDone').textContent=done.length}
+
+// ===== GPS =====
+function startGPS(){if(!navigator.geolocation){toast('المتصفح لا يدعم GPS',1);return}gpsOn=true;document.getElementById('gpsDot').className='gd on';document.getElementById('gpsTxt').textContent='مفعل';document.getElementById('gpsBtn').innerHTML='<i class="fas fa-location-arrow"></i> إيقاف';
+gpsW=navigator.geolocation.watchPosition(async pos=>{myLat=pos.coords.latitude;myLng=pos.coords.longitude;document.getElementById('gpsTxt').textContent=`${myLat.toFixed(4)}, ${myLng.toFixed(4)}`;
+if(drv&&sb)try{await sb.from('drivers').update({lat:myLat,lng:myLng,last_seen:new Date().toISOString()}).eq('id',drv.id)}catch(e){}
+if(dMap&&myMk){myMk.setLatLng([myLat,myLng]);dMap.setView([myLat,myLng],14)}},()=>{document.getElementById('gpsDot').className='gd off';document.getElementById('gpsTxt').textContent='فشل GPS'},{enableHighAccuracy:true,maximumAge:10000,timeout:15000})}
+function stopGPS(){if(gpsW!==null)navigator.geolocation.clearWatch(gpsW);gpsOn=false;document.getElementById('gpsDot').className='gd off';document.getElementById('gpsTxt').textContent='متوقف';document.getElementById('gpsBtn').innerHTML='<i class="fas fa-location-arrow"></i> تفعيل'}
+function togGPS(){if(gpsOn)stopGPS();else startGPS()}
+
+function initMap(){if(dMap)return;const lat=myLat||cLat,lng=myLng||cLng;dMap=L.map('driverMap').setView([lat,lng],13);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(dMap);
+const ci=L.divIcon({className:'',html:'<div style="background:#f47920;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #fff"><i class="fas fa-building"></i></div>',iconSize:[26,26],iconAnchor:[13,13]});
+L.marker([cLat,cLng],{icon:ci}).addTo(dMap).bindPopup('مقر الشركة');
+const di=L.divIcon({className:'',html:'<div style="background:#16a34a;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.2)"><i class="fas fa-motorcycle"></i></div>',iconSize:[30,30],iconAnchor:[15,15]});
+myMk=L.marker([lat,lng],{icon:di}).addTo(dMap).bindPopup('أنت هنا')}
+
+setInterval(()=>{if(gpsOn&&drv&&myLat&&myLng&&sb)sb.from('drivers').update({lat:myLat,lng:myLng,last_seen:new Date().toISOString()}).eq('id',drv.id).catch(()=>{})},30000);
+
+function toast(m,err){const t=document.getElementById('toast');t.textContent=m;t.className='toast show'+(err?' err':'');setTimeout(()=>t.classList.remove('show'),3500)}
+</script>
+</body>
+</html>
