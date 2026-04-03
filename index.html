@@ -171,7 +171,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 const SB_URL='https://aeizymcxnhypvmsdpjum.supabase.co';
 const SB_KEY='sb_publishable_npCG48jSMhuaSTapcEtbcw_KBA1psfK';
 let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn('SB init:',e)}
@@ -220,4 +220,4 @@ let qrS=null;
 function openQR(){openM('qrModal');document.getElementById('qr-result').style.display='none';setTimeout(()=>{try{if(!qrS)qrS=new Html5Qrcode("qr-reader");qrS.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},async(text)=>{document.getElementById('qr-result').style.display='block';document.getElementById('qrResultText').textContent=text;qrS.stop().catch(()=>{});try{const d=JSON.parse(text);const tc=genCode();if(sb)await sb.from('orders').insert({tracking_code:tc,customer_name:d.name||'QR',customer_phone:d.phone||'',address:d.address||'',area:d.area||'',description:d.desc||'',amount:d.amount||0,status:'pending',source:'qr_scan'});toast('تم إضافة الطلب: '+tc)}catch(e){document.getElementById('trackInput').value=text;toast('تم مسح الكود')}}).catch(e=>console.log('QR:',e))}catch(e){console.log('QR init:',e)}},400)}
 function closeQR(){if(qrS)qrS.stop().catch(()=>{});closeM('qrModal')}
 
-async function sendC(){const n=document.getElementById('cName').value.trim(),p=document.getElementById('cPhone').value.trim(),e=document.getElementById('cEmail').value.trim(),m=document.getElementById('cMsg').value.trim();if(!n||!m)return toast('يرجى ملء الاسم والرسالة',1);try{if(sb)await sb.from('messages').inse
+async function sendC(){const n=document.getElementById('cName').value.trim(),p=document.getEleme
