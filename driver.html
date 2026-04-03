@@ -13,7 +13,6 @@
         :root{--navy:#1a2744;--orange:#f47920;--orange-d:#d4631a;--bg:#f3f5f9;--card:#fff;--text:#1a2744;--text-l:#5a6a80;--text-m:#8d9bb0;--border:#e2e7ef;--success:#16a34a;--danger:#dc2626;--shadow:0 4px 20px rgba(26,39,68,.07);--shadow-lg:0 10px 36px rgba(26,39,68,.1)}
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-
         .login{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#fff,#f0f4fb,#fef3eb);display:flex;align-items:center;justify-content:center;padding:20px}
         .login.hid{display:none}
         .lbox{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:32px;text-align:center;width:100%;max-width:360px;box-shadow:var(--shadow-lg)}
@@ -34,7 +33,8 @@
         .btn-sc{background:var(--success);color:#fff}.btn-dg{background:var(--danger);color:#fff}
         .btn-o{background:transparent;color:var(--orange);border:2px solid var(--orange)}.btn-o:hover{background:var(--orange);color:#fff}
         .btn-sm{padding:8px 14px;font-size:.83rem}
-
+        .btn-wr{background:#f59e0b;color:#fff}
+        .btn-pink{background:#be185d;color:#fff}
         .app{display:none}.app.show{display:block}
         .ah{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
         .hb{display:flex;align-items:center;gap:8px}.hb img{width:32px;border-radius:8px}
@@ -42,40 +42,53 @@
         .hu{display:flex;align-items:center;gap:8px}
         .hu .un{font-size:.82rem;color:var(--text-l)}
         .hu .lo{background:none;border:none;color:var(--danger);cursor:pointer;font-size:1rem}
-
         .gbar{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--card);border-bottom:1px solid var(--border)}
         .gs{display:flex;align-items:center;gap:8px;font-size:.83rem;color:var(--text-l)}
         .gd{width:10px;height:10px;border-radius:50%}.gd.on{background:var(--success);animation:pulse 2s infinite}.gd.off{background:var(--danger)}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
         .dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px}
         .ds{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;box-shadow:var(--shadow)}
         .ds .n{font-size:1.5rem;font-weight:800;color:var(--orange)}.ds .l{font-size:.72rem;color:var(--text-m);margin-top:2px}
-
         #driverMap{width:calc(100% - 32px);height:180px;margin:0 16px 14px;border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow)}
+
+        /* DESTINATION BAR */
+        .dest-bar{margin:0 16px 14px;background:var(--card);border:2px solid var(--orange);border-radius:14px;padding:14px;box-shadow:var(--shadow-lg)}
+        .dest-bar h4{color:var(--navy);font-family:'Cairo',sans-serif;font-size:.95rem;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+        .dest-bar h4 i{color:var(--orange)}
+        .dest-info{background:var(--bg);border-radius:10px;padding:10px;margin-bottom:10px}
+        .dest-info p{font-size:.85rem;color:var(--text-l);margin-bottom:3px}
+        .dest-info p strong{color:var(--text)}
+        .dest-btns{display:flex;gap:8px;flex-wrap:wrap}
+        .dest-empty{color:var(--text-m);font-size:.85rem;text-align:center;padding:8px}
 
         .os{padding:0 16px 16px}
         .os h3{font-size:1rem;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-family:'Cairo',sans-serif}.os h3 i{color:var(--orange)}
         .oc2{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);transition:.3s}
         .oc2:hover{border-color:var(--orange)}
+        .oc2.current-dest{border:2px solid var(--orange);background:#fff8f2}
         .ot{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
         .ocode{color:var(--orange);font-weight:700;font-size:.88rem}
         .badge{padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700}
         .b-pending{background:#fef3c7;color:#b45309}.b-processing{background:#dbeafe;color:#1d4ed8}
         .b-shipped{background:#ede9fe;color:#6d28d9}.b-out_for_delivery{background:#ffedd5;color:#c2410c}
-        .b-delivered{background:#dcfce7;color:#15803d}
+        .b-delivered{background:#dcfce7;color:#15803d}.b-returned{background:#fce7f3;color:#be185d}
+        .b-rejected{background:#fef2f2;color:#991b1b}.b-cancelled{background:#fee2e2;color:#b91c1c}
         .od{display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;font-size:.86rem}
         .od i{color:var(--orange);width:16px;margin-top:2px;font-size:.78rem}
         .od span{color:var(--text-l)}
         .oa{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+        /* Notes input */
+        .note-row{margin-top:8px;display:flex;gap:6px}
+        .note-row input{flex:1;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:'Tajawal';font-size:.82rem;outline:none}
+        .note-row input:focus{border-color:var(--orange)}
+        .note-row button{padding:7px 12px;border-radius:8px;border:none;background:var(--orange);color:#fff;font-family:'Tajawal';font-size:.8rem;cursor:pointer}
+        .note-saved{font-size:.78rem;color:var(--text-m);margin-top:4px;font-style:italic}
 
         .empty{text-align:center;padding:36px 20px;color:var(--text-m)}
         .empty i{font-size:2.5rem;margin-bottom:10px}
-
         .af{text-align:center;padding:18px 16px;border-top:1px solid var(--border)}
         .fb{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text-m);font-size:.78rem;transition:.3s}
         .fb:hover{color:var(--orange)}.fb img{width:22px;border-radius:5px}
-
         .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--success);color:#fff;padding:12px 22px;border-radius:10px;font-weight:700;z-index:9999;display:none;font-size:.88rem;box-shadow:var(--shadow-lg)}
         .toast.err{background:var(--danger)}.toast.show{display:block;animation:fadeIn .3s}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -104,6 +117,18 @@
     <div class="ah"><div class="hb"><img src="bol-logo.png" alt="Logo"><h3>Buy On <span>Line</span></h3></div><div class="hu"><span class="un" id="drvName"></span><button class="lo" onclick="logout()" title="خروج"><i class="fas fa-sign-out-alt"></i></button></div></div>
     <div class="gbar"><div class="gs"><span class="gd" id="gpsDot"></span><span id="gpsTxt">جاري تحديد الموقع...</span></div><button class="btn btn-sm btn-o" id="gpsBtn" onclick="togGPS()"><i class="fas fa-location-arrow"></i> تفعيل</button></div>
     <div class="dstats"><div class="ds"><div class="n" id="dsAll">0</div><div class="l">الكل</div></div><div class="ds"><div class="n" id="dsAct">0</div><div class="l">جاري</div></div><div class="ds"><div class="n" id="dsDone">0</div><div class="l">مسلّم</div></div></div>
+
+    <!-- DESTINATION BAR -->
+    <div class="dest-bar" id="destBar">
+        <h4><i class="fas fa-route"></i> الوجهة الحالية</h4>
+        <div id="destContent"><div class="dest-empty">جاري التحميل...</div></div>
+        <div class="dest-btns">
+            <button class="btn btn-sm btn-p" onclick="refreshDest()"><i class="fas fa-sync"></i> تحديث</button>
+            <button class="btn btn-sm btn-sc" onclick="nextDest()"><i class="fas fa-arrow-left"></i> الوجهة التالية</button>
+            <button class="btn btn-sm btn-o" onclick="openNav()" id="navBtn" style="display:none"><i class="fas fa-directions"></i> فتح الملاحة</button>
+        </div>
+    </div>
+
     <div id="driverMap"></div>
     <div class="os"><h3><i class="fas fa-box"></i> طلباتك</h3><div id="ordersList"></div></div>
     <div class="af"><a href="https://zero-nine-rose.vercel.app/" target="_blank" class="fb"><span>تم الإنشاء والتطوير من</span><img src="zn-logo.png" alt="Zero-Nine"><strong style="color:var(--orange)">Zero-Nine</strong></a></div>
@@ -117,9 +142,10 @@ const SB_KEY='sb_publishable_npCG48jSMhuaSTapcEtbcw_KBA1psfK';
 let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn('SB:',e)}
 
 let drv=null,myO=[],gpsW=null,gpsOn=false,myLat=null,myLng=null,dMap=null,myMk=null,cLat=29.851,cLng=31.2765;
-const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',cancelled:'ملغي'};
+let currentDestIndex=0; // Track which destination we're on
+const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',returned:'مرتجع',rejected:'مرفوض',cancelled:'ملغي'};
 
-// ===== LOGIN (FIXED) =====
+// ===== LOGIN =====
 document.getElementById('loginBtn').addEventListener('click',doLogin);
 document.getElementById('loginCode').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 
@@ -147,38 +173,124 @@ function logout(){stopGPS();drv=null;document.getElementById('loginScreen').clas
 
 async function loadLoc(){if(!sb)return;const{data}=await sb.from('settings').select('*').in('key',['company_lat','company_lng']);if(data)data.forEach(s=>{if(s.key==='company_lat')cLat=parseFloat(s.value);if(s.key==='company_lng')cLng=parseFloat(s.value)})}
 
-async function loadMyO(){if(!drv||!sb)return;const{data}=await sb.from('orders').select('*').eq('driver_id',drv.id).order('created_at',{ascending:false});myO=data||[];renderO();upStats()}
+// ===== ORDERS =====
+async function loadMyO(){
+    if(!drv||!sb)return;
+    const{data}=await sb.from('orders').select('*').eq('driver_id',drv.id).order('created_at',{ascending:false});
+    myO=data||[];
+    renderO();upStats();refreshDest();
+}
+
+function getActiveOrders(){
+    return myO.filter(o=>o.status!=='delivered'&&o.status!=='cancelled'&&o.status!=='returned'&&o.status!=='rejected');
+}
 
 function renderO(){
     const list=document.getElementById('ordersList');
-    const act=myO.filter(o=>o.status!=='delivered'&&o.status!=='cancelled');
+    const act=getActiveOrders();
     const done=myO.filter(o=>o.status==='delivered');
+    const returned=myO.filter(o=>o.status==='returned'||o.status==='rejected');
     if(!myO.length){list.innerHTML='<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد طلبات حالياً</p></div>';return}
     let h='';
-    act.forEach(o=>{h+=oCard(o,true)});
-    if(done.length){h+=`<h3 style="margin:18px 0 10px;font-size:.9rem;color:var(--success)"><i class="fas fa-check-circle"></i> مسلّمة</h3>`;done.forEach(o=>{h+=oCard(o,false)})}
+    // Active orders - highlight current destination
+    const sortedAct=sortByDistance(act);
+    sortedAct.forEach((o,i)=>{h+=oCard(o,true,i===currentDestIndex)});
+    if(returned.length){h+=`<h3 style="margin:18px 0 10px;font-size:.9rem;color:#be185d"><i class="fas fa-undo"></i> مرتجع/مرفوض</h3>`;returned.forEach(o=>{h+=oCard(o,false,false)})}
+    if(done.length){h+=`<h3 style="margin:18px 0 10px;font-size:.9rem;color:var(--success)"><i class="fas fa-check-circle"></i> مسلّمة</h3>`;done.forEach(o=>{h+=oCard(o,false,false)})}
     list.innerHTML=h;
 }
 
-function oCard(o,showA){
-    return`<div class="oc2"><div class="ot"><span class="ocode"><i class="fas fa-barcode"></i> ${o.tracking_code}</span><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></div>
+function sortByDistance(orders){
+    // Sort active orders by area name (alphabetical as proxy for distance from company)
+    // This maintains a consistent order for destination routing
+    return [...orders].sort((a,b)=>(a.area||'').localeCompare(b.area||''));
+}
+
+function oCard(o,showA,isCurrent){
+    return`<div class="oc2 ${isCurrent?'current-dest':''}" id="order-${o.id}">
+    ${isCurrent?'<div style="background:var(--orange);color:#fff;padding:3px 10px;border-radius:8px;font-size:.75rem;font-weight:700;margin-bottom:8px;display:inline-block"><i class="fas fa-map-marker-alt"></i> الوجهة الحالية</div>':''}
+    <div class="ot"><span class="ocode"><i class="fas fa-barcode"></i> ${o.tracking_code}</span><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></div>
     <div class="od"><i class="fas fa-user"></i><span>${o.customer_name}</span></div>
     <div class="od"><i class="fas fa-phone"></i><span>${o.customer_phone||'-'}</span></div>
     <div class="od"><i class="fas fa-map-marker-alt"></i><span>${o.address||'-'}</span></div>
     <div class="od"><i class="fas fa-map-pin"></i><span>${o.area||'-'}</span></div>
     <div class="od"><i class="fas fa-money-bill"></i><span>${o.amount||0} ج.م</span></div>
     ${o.description?`<div class="od"><i class="fas fa-clipboard"></i><span>${o.description}</span></div>`:''}
+    ${o.notes?`<div class="note-saved"><i class="fas fa-sticky-note"></i> ملاحظة: ${o.notes}</div>`:''}
     ${showA?`<div class="oa">
     ${o.status==='pending'||o.status==='processing'?`<button class="btn btn-sm btn-p" onclick="upSt('${o.id}','shipped')"><i class="fas fa-truck"></i> شحن</button>`:''}
     ${o.status==='shipped'?`<button class="btn btn-sm btn-p" onclick="upSt('${o.id}','out_for_delivery')"><i class="fas fa-motorcycle"></i> في الطريق</button>`:''}
     ${o.status==='out_for_delivery'?`<button class="btn btn-sm btn-sc" onclick="upSt('${o.id}','delivered')"><i class="fas fa-check"></i> تم التسليم</button>`:''}
+    <button class="btn btn-sm btn-pink" onclick="upSt('${o.id}','returned')"><i class="fas fa-undo"></i> مرتجع</button>
+    <button class="btn btn-sm btn-dg" onclick="upSt('${o.id}','rejected')"><i class="fas fa-times"></i> مرفوض</button>
     <a href="tel:${o.customer_phone}" class="btn btn-sm btn-o"><i class="fas fa-phone"></i></a>
     ${o.customer_phone?`<a href="https://wa.me/2${o.customer_phone}" target="_blank" class="btn btn-sm btn-sc" style="background:#25D366"><i class="fab fa-whatsapp"></i></a>`:''}
+    </div>
+    <div class="note-row">
+        <input type="text" id="note-${o.id}" placeholder="أضف ملاحظة..." value="${o.notes||''}">
+        <button onclick="saveNote('${o.id}')"><i class="fas fa-save"></i></button>
     </div>`:''}</div>`;
 }
 
-async function upSt(id,st){if(!sb)return;await sb.from('orders').update({status:st}).eq('id',id);toast('تم التحديث');loadMyO()}
-function upStats(){const act=myO.filter(o=>o.status!=='delivered'&&o.status!=='cancelled');const done=myO.filter(o=>o.status==='delivered');document.getElementById('dsAll').textContent=myO.length;document.getElementById('dsAct').textContent=act.length;document.getElementById('dsDone').textContent=done.length}
+async function upSt(id,st){
+    if(st==='returned'||st==='rejected'){if(!confirm(`هل أنت متأكد من تغيير الحالة إلى "${stMap[st]}"؟`))return}
+    if(!sb)return;await sb.from('orders').update({status:st}).eq('id',id);toast('تم التحديث');loadMyO();
+}
+
+async function saveNote(id){
+    const note=document.getElementById('note-'+id)?.value||'';
+    if(!sb)return;await sb.from('orders').update({notes:note}).eq('id',id);toast('تم حفظ الملاحظة');
+}
+
+function upStats(){const act=getActiveOrders();const done=myO.filter(o=>o.status==='delivered');document.getElementById('dsAll').textContent=myO.length;document.getElementById('dsAct').textContent=act.length;document.getElementById('dsDone').textContent=done.length}
+
+// ===== DESTINATION ROUTING =====
+function refreshDest(){
+    const act=sortByDistance(getActiveOrders());
+    const dest=document.getElementById('destContent');
+    if(!act.length){
+        dest.innerHTML='<div class="dest-empty"><i class="fas fa-check-circle" style="color:var(--success)"></i> لا توجد وجهات متبقية</div>';
+        document.getElementById('navBtn').style.display='none';
+        currentDestIndex=0;
+        return;
+    }
+    if(currentDestIndex>=act.length)currentDestIndex=0;
+    const o=act[currentDestIndex];
+    dest.innerHTML=`<div class="dest-info">
+        <p><strong><i class="fas fa-hashtag" style="color:var(--orange)"></i> ${o.tracking_code}</strong></p>
+        <p><strong>العميل:</strong> ${o.customer_name}</p>
+        <p><strong>الهاتف:</strong> ${o.customer_phone||'-'}</p>
+        <p><strong>العنوان:</strong> ${o.address||'-'}</p>
+        <p><strong>المنطقة:</strong> ${o.area||'-'}</p>
+        <p><strong>المبلغ:</strong> ${o.amount||0} ج.م</p>
+        <p style="color:var(--text-m);font-size:.78rem;margin-top:4px">الوجهة ${currentDestIndex+1} من ${act.length}</p>
+    </div>`;
+    document.getElementById('navBtn').style.display='inline-flex';
+    // Re-render orders to highlight current
+    renderO();
+}
+
+function nextDest(){
+    const act=sortByDistance(getActiveOrders());
+    if(!act.length)return;
+    currentDestIndex=(currentDestIndex+1)%act.length;
+    refreshDest();
+    // Scroll to current dest card
+    const currentOrder=act[currentDestIndex];
+    if(currentOrder){
+        const el=document.getElementById('order-'+currentOrder.id);
+        if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+}
+
+function openNav(){
+    const act=sortByDistance(getActiveOrders());
+    if(!act.length||currentDestIndex>=act.length)return;
+    const o=act[currentDestIndex];
+    // Open Google Maps with the address
+    const addr=encodeURIComponent((o.address||'')+(o.area?' '+o.area:''));
+    window.open(`https://www.google.com/maps/search/?api=1&query=${addr}`,'_blank');
+}
 
 // ===== GPS =====
 function startGPS(){if(!navigator.geolocation){toast('المتصفح لا يدعم GPS',1);return}gpsOn=true;document.getElementById('gpsDot').className='gd on';document.getElementById('gpsTxt').textContent='مفعل';document.getElementById('gpsBtn').innerHTML='<i class="fas fa-location-arrow"></i> إيقاف';
