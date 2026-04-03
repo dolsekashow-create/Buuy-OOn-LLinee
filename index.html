@@ -161,7 +161,7 @@
 <div class="sc"><i class="fas fa-truck-loading"></i><h3>شحن بالجملة</h3><p>أسعار خاصة للشحنات الكبيرة</p></div>
 </div></div></section>
 
-<section id="contact"><div class="section"><h2 class="st">تواصل <span>معنا</span></h2><p class="ss">نحن هنا لخدمتك</p><div class="cw"><div class="ci"><h3>معلومات التواصل</h3><div class="ct"><i class="fas fa-phone"></i><span>01234567890</span></div><div class="ct"><i class="fab fa-whatsapp"></i><span>01234567890</span></div><div class="ct"><i class="fas fa-envelope"></i><span>info@buyonline-shipping.com</span></div><div class="ct"><i class="fas fa-map-marker-alt"></i><span>مصر - الجيزة</span></div></div><div class="cf"><input type="text" placeholder="الاسم" id="cName"><input type="text" placeholder="رقم الهاتف" id="cPhone"><input type="email" placeholder="البريد الإلكتروني" id="cEmail"><textarea placeholder="رسالتك..." id="cMsg"></textarea><button class="btn btn-p" onclick="sendC()"><i class="fas fa-paper-plane"></i> إرسال</button></div></div></div></section>
+<section id="contact"><div class="section"><h2 class="st">تواصل <span>معنا</span></h2><p class="ss">نحن هنا لخدمتك</p><div class="cw"><div class="ci"><h3>معلومات التواصل</h3><div class="ct"><i class="fas fa-phone"></i><span id="sitePhone">01234567890</span></div><div class="ct"><i class="fab fa-whatsapp"></i><span id="siteWhatsapp">01234567890</span></div><div class="ct" id="siteFbRow" style="display:none"><i class="fab fa-facebook"></i><a id="siteFacebook" href="#" target="_blank" style="color:var(--text-l);text-decoration:none">فيسبوك</a></div><div class="ct" id="siteIgRow" style="display:none"><i class="fab fa-instagram"></i><a id="siteInstagram" href="#" target="_blank" style="color:var(--text-l);text-decoration:none">انستجرام</a></div><div class="ct"><i class="fas fa-envelope"></i><span id="siteEmail">info@buyonline-shipping.com</span></div><div class="ct"><i class="fas fa-map-marker-alt"></i><span id="siteAddress">مصر - الجيزة</span></div></div><div class="cf"><input type="text" placeholder="الاسم" id="cName"><input type="text" placeholder="رقم الهاتف" id="cPhone"><input type="email" placeholder="البريد الإلكتروني" id="cEmail"><textarea placeholder="رسالتك..." id="cMsg"></textarea><button class="btn btn-p" onclick="sendC()"><i class="fas fa-paper-plane"></i> إرسال</button></div></div></div></section>
 
 <footer class="footer"><p>© 2024 Buy On Line - Shipping & Logistics. جميع الحقوق محفوظة.</p><a href="https://zero-nine-rose.vercel.app/" target="_blank" class="fb"><span>تم الإنشاء والتطوير من</span><img src="zn-logo.png" alt="Zero-Nine"><strong style="color:var(--orange)">Zero-Nine</strong></a></footer>
 
@@ -171,7 +171,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const SB_URL='https://aeizymcxnhypvmsdpjum.supabase.co';
 const SB_KEY='sb_publishable_npCG48jSMhuaSTapcEtbcw_KBA1psfK';
 let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn('SB init:',e)}
@@ -179,7 +179,15 @@ let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn(
 window.addEventListener('scroll',()=>document.getElementById('navbar').classList.toggle('scrolled',scrollY>40));
 document.querySelectorAll('.nav-links a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'});document.getElementById('navLinks').classList.remove('open')}));
 
-(async()=>{try{if(!sb)return;const{data}=await sb.from('settings').select('value').eq('key','hero_bg').single();if(data&&data.value)document.getElementById('heroBg').style.backgroundImage=`url(${data.value})`}catch(e){}})();
+(async()=>{try{if(!sb)return;const{data}=await sb.from('settings').select('*');if(data)data.forEach(s=>{
+if(s.key==='hero_bg'&&s.value)document.getElementById('heroBg').style.backgroundImage=`url(${s.value})`;
+if(s.key==='ct_phone'&&s.value)document.getElementById('sitePhone').textContent=s.value;
+if(s.key==='ct_whatsapp'&&s.value)document.getElementById('siteWhatsapp').textContent=s.value;
+if(s.key==='ct_email'&&s.value)document.getElementById('siteEmail').textContent=s.value;
+if(s.key==='ct_address'&&s.value)document.getElementById('siteAddress').textContent=s.value;
+if(s.key==='ct_facebook'&&s.value){document.getElementById('siteFbRow').style.display='flex';document.getElementById('siteFacebook').href=s.value}
+if(s.key==='ct_instagram'&&s.value){document.getElementById('siteIgRow').style.display='flex';document.getElementById('siteInstagram').href=s.value}
+})}catch(e){}})();
 
 function openM(id){document.getElementById(id).classList.add('show')}
 function closeM(id){document.getElementById(id).classList.remove('show')}
@@ -212,7 +220,4 @@ let qrS=null;
 function openQR(){openM('qrModal');document.getElementById('qr-result').style.display='none';setTimeout(()=>{try{if(!qrS)qrS=new Html5Qrcode("qr-reader");qrS.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},async(text)=>{document.getElementById('qr-result').style.display='block';document.getElementById('qrResultText').textContent=text;qrS.stop().catch(()=>{});try{const d=JSON.parse(text);const tc=genCode();if(sb)await sb.from('orders').insert({tracking_code:tc,customer_name:d.name||'QR',customer_phone:d.phone||'',address:d.address||'',area:d.area||'',description:d.desc||'',amount:d.amount||0,status:'pending',source:'qr_scan'});toast('تم إضافة الطلب: '+tc)}catch(e){document.getElementById('trackInput').value=text;toast('تم مسح الكود')}}).catch(e=>console.log('QR:',e))}catch(e){console.log('QR init:',e)}},400)}
 function closeQR(){if(qrS)qrS.stop().catch(()=>{});closeM('qrModal')}
 
-async function sendC(){const n=document.getElementById('cName').value.trim(),p=document.getElementById('cPhone').value.trim(),e=document.getElementById('cEmail').value.trim(),m=document.getElementById('cMsg').value.trim();if(!n||!m)return toast('يرجى ملء الاسم والرسالة',1);try{if(sb)await sb.from('messages').insert({name:n,phone:p,email:e,message:m});toast('تم إرسال رسالتك!');['cName','cPhone','cEmail','cMsg'].forEach(id=>document.getElementById(id).value='')}catch(e){toast('خطأ في الإرسال',1)}}
-</script>
-</body>
-</html>
+async function sendC(){const n=document.getElementById('cName').value.trim(),p=document.getElementById('cPhone').value.trim(),e=document.getElementById('cEmail').value.trim(),m=document.getElementById('cMsg').value.trim();if(!n||!m)return toast('يرجى ملء الاسم والرسالة',1);try{if(sb)await sb.from('messages').inse
