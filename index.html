@@ -108,9 +108,10 @@
         #qr-reader{width:100%;border-radius:12px;overflow:hidden}
         .footer{background:#fff;border-top:1px solid var(--border);padding:24px;text-align:center}
         .footer p{color:var(--text-m);font-size:.83rem;margin-bottom:8px}
-        .fb{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--text-l);font-size:.88rem;transition:.3s}
-        .fb:hover{color:var(--orange)}
-        .fb img{width:30px;height:30px;border-radius:8px}
+        .footer-dev-frame{display:block;position:relative;overflow:hidden;border-radius:16px;border:2px solid rgba(193,154,91,0.35);text-decoration:none;transition:all 0.3s;max-width:420px;width:90%;margin:12px auto 0}
+        .footer-dev-frame::before{content:'';position:absolute;inset:4px;border:1px solid rgba(193,154,91,0.15);border-radius:12px;pointer-events:none;z-index:3}
+        .footer-dev-frame:hover{border-color:rgba(193,154,91,0.55);transform:translateY(-2px);box-shadow:0 8px 30px rgba(193,154,91,0.15)}
+        .footer-dev-video{width:100%;display:block;border-radius:14px}
         .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:13px 28px;border-radius:12px;font-weight:700;z-index:9999;display:none;font-size:.93rem;box-shadow:var(--shadow-lg);background:var(--success);color:#fff}
         .toast.error{background:var(--danger)}
         .toast.show{display:block;animation:fadeIn .3s}
@@ -231,10 +232,11 @@
 
 <footer class="footer">
     <p>&copy; 2024 Buy On Line - Shipping &amp; Logistics. جميع الحقوق محفوظة.</p>
-    <a href="https://zero-nine-rose.vercel.app/" target="_blank" class="fb">
-        <span>تم الإنشاء والتطوير من</span>
-        <img src="zn-logo.png" alt="Zero-Nine">
-        <strong style="color:var(--orange)">Zero-Nine</strong>
+    <p style="color:var(--text-m);font-size:.83rem;margin-bottom:4px">تم الإنشاء والتطوير بواسطة</p>
+    <a href="https://zero-nine-rose.vercel.app/" target="_blank" class="footer-dev-frame">
+        <video class="footer-dev-video" autoplay loop muted playsinline>
+            <source src="zero-nine-intro.mp4" type="video/mp4">
+        </video>
     </a>
 </footer>
 
