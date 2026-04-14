@@ -485,3 +485,13 @@
             if (sb) await sb.from('messages').insert({ name: n, phone: p, email: e, message: m });
             showToast('تم إرسال رسالتك!');
             var fields = ['cName','cPhone','cEmail','cMsg'];
+            for (var i = 0; i < fields.length; i++) document.getElementById(fields[i]).value = '';
+        } catch(e) {
+            showToast('خطأ: ' + (e.message || e), true);
+        }
+    });
+
+})();
+</script>
+</body>
+</html>
