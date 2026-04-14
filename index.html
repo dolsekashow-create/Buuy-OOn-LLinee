@@ -165,8 +165,8 @@
         <div class="track-box">
             <h3><i class="fas fa-search-location"></i> تتبع شحنتك</h3>
             <div class="tir">
-                <input type="text" id="trackInput" placeholder="أدخل رقم التتبع...">
-                <button class="btn btn-p" id="btnTrack"><i class="fas fa-search"></i> تتبع</button>
+                <input type="text" id="trackInput" placeholder="أدخل رقم الموبايل للبحث...">
+                <button class="btn btn-p" id="btnTrack"><i class="fas fa-search"></i> بحث</button>
             </div>
             <div class="tr" id="trackResult"></div>
         </div>
@@ -216,7 +216,7 @@
                 <div class="ct"><i class="fab fa-whatsapp"></i><span id="siteWhatsapp">01234567890</span></div>
                 <div class="ct" id="siteFbRow" style="display:none"><i class="fab fa-facebook"></i><a id="siteFacebook" href="#" target="_blank" style="color:var(--text-l);text-decoration:none">فيسبوك</a></div>
                 <div class="ct" id="siteIgRow" style="display:none"><i class="fab fa-instagram"></i><a id="siteInstagram" href="#" target="_blank" style="color:var(--text-l);text-decoration:none">انستجرام</a></div>
-                <div class="ct"><i class="fas fa-envelope"></i><span id="siteEmailSpan">info@company.com</span></div>
+                <div class="ct"><i class="fas fa-envelope"></i><span id="siteEmailSpan"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8de4e3ebe2cdeee2e0fdece3f4a3eee2e0">[email&#160;protected]</a></span></div>
                 <div class="ct"><i class="fas fa-map-marker-alt"></i><span id="siteAddress">مصر - الجيزة</span></div>
             </div>
             <div class="cf">
@@ -246,7 +246,9 @@
         <button class="mc" id="closeOrderModal">&times;</button>
         <h2><i class="fas fa-plus-circle"></i> إضافة طلب جديد</h2>
         <div class="fg"><label>اسم العميل *</label><input id="oName"></div>
-        <div class="fg"><label>رقم الهاتف *</label><input id="oPhone"></div>
+        <div class="fg"><label>اسم المرسل *</label><input id="oSender"></div>
+        <div class="fg"><label>رقم الهاتف 1 *</label><input id="oPhone"></div>
+        <div class="fg"><label>رقم الهاتف 2</label><input id="oPhone2"></div>
         <div class="fg"><label>العنوان *</label><input id="oAddress"></div>
         <div class="fg"><label>المنطقة</label><input id="oArea" placeholder="البدرشين، العياط..."></div>
         <div class="fg"><label>وصف الطلب</label><textarea id="oDesc"></textarea></div>
@@ -276,7 +278,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- Load Supabase FIRST -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Load QR scanner -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
@@ -348,35 +350,44 @@
 
     document.getElementById('btnTrack').addEventListener('click', async function(){
         var code = document.getElementById('trackInput').value.trim();
-        if (!code) return showToast('أدخل رقم التتبع', true);
+        if (!code) return showToast('أدخل رقم الموبايل', true);
         var r = document.getElementById('trackResult');
         r.innerHTML = '<p style="text-align:center;color:var(--orange)"><i class="fas fa-spinner fa-spin"></i> جاري البحث...</p>';
         r.classList.add('show');
         try {
             if (!sb) throw new Error('لا يوجد اتصال بقاعدة البيانات');
-            var res = await sb.from('orders').select('*').eq('tracking_code', code).single();
-            if (res.error || !res.data) {
-                r.innerHTML = '<p style="text-align:center;color:var(--danger)"><i class="fas fa-times-circle"></i> لم يتم العثور على شحنة بهذا الرقم</p>';
+            var res = await sb.from('orders').select('*').or('customer_phone.eq.'+code+',customer_phone2.eq.'+code).order('created_at',{ascending:false});
+            if (res.error) throw res.error;
+            if (!res.data || res.data.length === 0) {
+                r.innerHTML = '<p style="text-align:center;color:var(--danger)"><i class="fas fa-times-circle"></i> لم يتم العثور على شحنات بهذا الرقم</p>';
                 return;
             }
-            var d = res.data;
-            var sm = {pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',cancelled:'ملغي',returned:'مرتجع',rejected:'مرفوض'};
-            var scl = {pending:'sd-p',processing:'sd-p',shipped:'sd-s',out_for_delivery:'sd-s',delivered:'sd-d',cancelled:'sd-c'};
-            var stages = ['pending','processing','shipped','out_for_delivery','delivered'];
-            var ci = stages.indexOf(d.status);
-            var html = '<div class="ts"><span class="sd '+(scl[d.status]||'sd-p')+'"></span><span>'+(sm[d.status]||d.status)+'</span></div>';
-            html += '<div class="td">';
-            html += '<p><strong>رقم التتبع:</strong> '+d.tracking_code+'</p>';
-            html += '<p><strong>العميل:</strong> '+d.customer_name+'</p>';
-            html += '<p><strong>العنوان:</strong> '+(d.address||'-')+'</p>';
-            html += '<p><strong>المنطقة:</strong> '+(d.area||'-')+'</p>';
-            html += '<p><strong>التاريخ:</strong> '+new Date(d.created_at).toLocaleDateString('ar-EG')+'</p>';
-            html += '</div><div class="tl">';
-            var names = ['تم استلام الطلب','قيد التجهيز','تم الشحن','في الطريق','تم التسليم'];
-            for (var j = 0; j < names.length; j++) {
-                html += '<div class="ti '+(j<=ci?'dn':'')+'"><h4>'+names[j]+'</h4></div>';
+            var html = '';
+            for (var idx = 0; idx < res.data.length; idx++) {
+                var d = res.data[idx];
+                var sm = {pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',cancelled:'ملغي',returned:'مرتجع',rejected:'مرفوض'};
+                var scl = {pending:'sd-p',processing:'sd-p',shipped:'sd-s',out_for_delivery:'sd-s',delivered:'sd-d',cancelled:'sd-c'};
+                var stages = ['pending','processing','shipped','out_for_delivery','delivered'];
+                var ci = stages.indexOf(d.status);
+                html += '<div style="'+(idx>0?'border-top:2px solid var(--border);padding-top:16px;margin-top:16px;':'')+'">';
+                html += '<div class="ts"><span class="sd '+(scl[d.status]||'sd-p')+'"></span><span>'+(sm[d.status]||d.status)+'</span></div>';
+                html += '<div class="td">';
+                html += '<p><strong>رقم التتبع:</strong> '+d.tracking_code+'</p>';
+                html += '<p><strong>العميل:</strong> '+d.customer_name+'</p>';
+                html += '<p><strong>المرسل:</strong> '+(d.sender_name||'-')+'</p>';
+                html += '<p><strong>الهاتف 1:</strong> '+(d.customer_phone||'-')+'</p>';
+                html += '<p><strong>الهاتف 2:</strong> '+(d.customer_phone2||'-')+'</p>';
+                html += '<p><strong>العنوان:</strong> '+(d.address||'-')+'</p>';
+                html += '<p><strong>المنطقة:</strong> '+(d.area||'-')+'</p>';
+                html += '<p><strong>المبلغ:</strong> '+(d.amount||0)+' ج.م</p>';
+                html += '<p><strong>التاريخ:</strong> '+new Date(d.created_at).toLocaleDateString('ar-EG')+'</p>';
+                html += '</div><div class="tl">';
+                var names = ['تم استلام الطلب','قيد التجهيز','تم الشحن','في الطريق','تم التسليم'];
+                for (var j = 0; j < names.length; j++) {
+                    html += '<div class="ti '+(j<=ci?'dn':'')+'"><h4>'+names[j]+'</h4></div>';
+                }
+                html += '</div></div>';
             }
-            html += '</div>';
             r.innerHTML = html;
         } catch(e) {
             r.innerHTML = '<p style="text-align:center;color:var(--danger)">خطأ: '+e.message+'</p>';
@@ -395,24 +406,26 @@
     });
     document.getElementById('btnSubmitOrder').addEventListener('click', async function(){
         var n = document.getElementById('oName').value.trim();
+        var sn = document.getElementById('oSender').value.trim();
         var ph = document.getElementById('oPhone').value.trim();
+        var ph2 = document.getElementById('oPhone2').value.trim();
         var ad = document.getElementById('oAddress').value.trim();
         var ar = document.getElementById('oArea').value.trim();
         var ds = document.getElementById('oDesc').value.trim();
         var am = parseFloat(document.getElementById('oAmount').value) || 0;
-        if (!n || !ph || !ad) return showToast('يرجى ملء الحقول المطلوبة', true);
+        if (!n || !sn || !ph || !ad) return showToast('يرجى ملء الحقول المطلوبة', true);
         var tc = genCode();
         try {
             if (!sb) throw new Error('لا يوجد اتصال');
             var res = await sb.from('orders').insert({
-                tracking_code: tc, customer_name: n, customer_phone: ph,
+                tracking_code: tc, customer_name: n, sender_name: sn, customer_phone: ph, customer_phone2: ph2,
                 address: ad, area: ar, description: ds, amount: am,
                 status: 'pending', source: 'website'
             });
             if (res.error) throw res.error;
             showToast('تم إرسال الطلب! رقم التتبع: ' + tc);
             closeModal('orderModal');
-            var fields = ['oName','oPhone','oAddress','oArea','oDesc','oAmount'];
+            var fields = ['oName','oSender','oPhone','oPhone2','oAddress','oArea','oDesc','oAmount'];
             for (var i = 0; i < fields.length; i++) document.getElementById(fields[i]).value = '';
         } catch(e) {
             showToast('خطأ: ' + (e.message || e), true);
@@ -472,13 +485,3 @@
             if (sb) await sb.from('messages').insert({ name: n, phone: p, email: e, message: m });
             showToast('تم إرسال رسالتك!');
             var fields = ['cName','cPhone','cEmail','cMsg'];
-            for (var i = 0; i < fields.length; i++) document.getElementById(fields[i]).value = '';
-        } catch(err) {
-            showToast('خطأ في الإرسال', true);
-        }
-    });
-
-})();
-</script>
-</body>
-</html>
