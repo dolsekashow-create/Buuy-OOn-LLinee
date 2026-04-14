@@ -157,7 +157,7 @@
 
 <!-- DASHBOARD -->
 <div class="page act" id="page-dashboard">
-<div class="ph"><h1><i class="fas fa-chart-pie"></i> لوحة القيادة</h1></div>
+<div class="ph"><h1><i class="fas fa-chart-pie"></i> لوحة القيادة</h1><div style="display:flex;gap:8px;align-items:center"><input type="text" placeholder="بحث برقم الموبايل..." id="dashSearch" oninput="filterDash()" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:'Tajawal';font-size:.88rem;outline:none;min-width:200px"></div></div>
 <div class="sgrid">
 <div class="scard"><div class="si"><i class="fas fa-box"></i></div><div class="sn2" id="stAll">0</div><div class="sl">إجمالي الطلبات</div></div>
 <div class="scard"><div class="si"><i class="fas fa-clock"></i></div><div class="sn2" id="stPend">0</div><div class="sl">قيد الانتظار</div></div>
@@ -166,14 +166,14 @@
 <div class="scard"><div class="si"><i class="fas fa-motorcycle"></i></div><div class="sn2" id="stDrv">0</div><div class="sl">المناديب</div></div>
 <div class="scard"><div class="si"><i class="fas fa-money-bill-wave"></i></div><div class="sn2" id="stRev">0</div><div class="sl">الإيرادات (ج.م)</div></div>
 </div>
-<div class="tw"><div class="tt"><h3 style="font-size:.95rem">أحدث الطلبات</h3></div><div style="overflow-x:auto"><table><thead><tr><th>رقم التتبع</th><th>العميل</th><th>المنطقة</th><th>الحالة</th><th>التاريخ</th></tr></thead><tbody id="recentBody"></tbody></table></div></div>
+<div class="tw"><div class="tt"><h3 style="font-size:.95rem">أحدث الطلبات</h3></div><div style="overflow-x:auto"><table><thead><tr><th>رقم التتبع</th><th>العميل</th><th>المرسل</th><th>الهاتف 1</th><th>الهاتف 2</th><th>العنوان</th><th>المنطقة</th><th>المبلغ</th><th>الحالة</th><th>التاريخ</th></tr></thead><tbody id="recentBody"></tbody></table></div></div>
 </div>
 
 <!-- ORDERS -->
 <div class="page" id="page-orders">
 <div class="ph"><h1><i class="fas fa-box"></i> إدارة الطلبات</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="openM('addOM')"><i class="fas fa-plus"></i> إضافة طلب</button><button class="btn btn-o" onclick="openAQR()"><i class="fas fa-qrcode"></i> مسح QR</button></div></div>
-<div class="tw"><div class="tt"><input type="text" placeholder="بحث..." id="oSearch" oninput="filterO()"><select id="oFilter" onchange="filterO()"><option value="">كل الحالات</option><option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option></select></div>
-<div style="overflow-x:auto"><table><thead><tr><th class="cc"><input type="checkbox" id="selAll" onchange="togAll()"></th><th>رقم التتبع</th><th>العميل</th><th>الهاتف</th><th>المنطقة</th><th>المبلغ</th><th>الحالة</th><th>المندوب</th><th>إجراءات</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div>
+<div class="tw"><div class="tt"><input type="text" placeholder="بحث برقم الموبايل..." id="oSearch" oninput="filterO()"><select id="oFilter" onchange="filterO()"><option value="">كل الحالات</option><option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option></select></div>
+<div style="overflow-x:auto"><table><thead><tr><th class="cc"><input type="checkbox" id="selAll" onchange="togAll()"></th><th>رقم التتبع</th><th>العميل</th><th>المرسل</th><th>الهاتف 1</th><th>الهاتف 2</th><th>العنوان</th><th>المنطقة</th><th>الوصف</th><th>المبلغ</th><th>الحالة</th><th>المندوب</th><th>إجراءات</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div>
 </div>
 
 <!-- MAP -->
@@ -246,7 +246,9 @@
 <!-- ADD ORDER MODAL - with mandatory driver -->
 <div class="mov" id="addOM"><div class="mdl"><button class="mc" onclick="closeM('addOM')">&times;</button><h2><i class="fas fa-plus-circle"></i> إضافة طلب</h2>
 <div class="fg"><label>اسم العميل *</label><input id="aoN"></div>
-<div class="fg"><label>الهاتف *</label><input id="aoP"></div>
+<div class="fg"><label>اسم المرسل *</label><input id="aoSN"></div>
+<div class="fg"><label>الهاتف 1 *</label><input id="aoP"></div>
+<div class="fg"><label>الهاتف 2</label><input id="aoP2"></div>
 <div class="fg"><label>العنوان *</label><input id="aoA"></div>
 <div class="fg"><label>المنطقة</label><input id="aoAr"></div>
 <div class="fg"><label>الوصف</label><textarea id="aoD" rows="2"></textarea></div>
@@ -256,6 +258,14 @@
 
 <!-- EDIT ORDER MODAL - with more statuses -->
 <div class="mov" id="editOM"><div class="mdl"><button class="mc" onclick="closeM('editOM')">&times;</button><h2><i class="fas fa-edit"></i> تعديل الطلب</h2><input type="hidden" id="eoId">
+<div class="fg"><label>اسم العميل</label><input id="eoN"></div>
+<div class="fg"><label>اسم المرسل</label><input id="eoSN"></div>
+<div class="fg"><label>الهاتف 1</label><input id="eoP"></div>
+<div class="fg"><label>الهاتف 2</label><input id="eoP2"></div>
+<div class="fg"><label>العنوان</label><input id="eoA"></div>
+<div class="fg"><label>المنطقة</label><input id="eoAr"></div>
+<div class="fg"><label>الوصف</label><textarea id="eoDs" rows="2"></textarea></div>
+<div class="fg"><label>المبلغ</label><input type="number" id="eoAm"></div>
 <div class="fg"><label>الحالة</label><select id="eoSt">
 <option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option>
 </select></div>
@@ -384,11 +394,12 @@ function chgPass(){const p=document.getElementById('newPass').value;if(!p||p.len
 // ===== ORDERS =====
 const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',returned:'مرتجع',rejected:'مرفوض',cancelled:'ملغي'};
 async function loadO(){if(!sb)return;const{data}=await sb.from('orders').select('*').order('created_at',{ascending:false});allO=data||[];renderO();upStats();renderRecent()}
-function renderO(){const s=(document.getElementById('oSearch')?.value||'').toLowerCase(),f=document.getElementById('oFilter')?.value||'';let fl=allO.filter(o=>{const ms=!s||o.customer_name?.toLowerCase().includes(s)||o.tracking_code?.toLowerCase().includes(s);const mf=!f||o.status===f;return ms&&mf});
-document.getElementById('ordersBody').innerHTML=fl.map(o=>{const dn=allD.find(d=>d.id===o.driver_id)?.name||'-';return`<tr><td class="cc"><input type="checkbox" class="oc" value="${o.id}" data-code="${o.tracking_code}"></td><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.customer_name}</td><td>${o.customer_phone||'-'}</td><td>${o.area||'-'}</td><td>${o.amount||0} ج.م</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${dn}</td><td><button class="btn btn-sm btn-in" onclick="editO('${o.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-dg" onclick="delO('${o.id}')"><i class="fas fa-trash"></i></button></td></tr>`}).join('')}
+function renderO(){const s=(document.getElementById('oSearch')?.value||'').trim(),f=document.getElementById('oFilter')?.value||'';let fl=allO.filter(o=>{const ms=!s||o.customer_phone?.includes(s)||o.customer_phone2?.includes(s);const mf=!f||o.status===f;return ms&&mf});
+document.getElementById('ordersBody').innerHTML=fl.map(o=>{const dn=allD.find(d=>d.id===o.driver_id)?.name||'-';return`<tr><td class="cc"><input type="checkbox" class="oc" value="${o.id}" data-code="${o.tracking_code}"></td><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.customer_name}</td><td>${o.sender_name||'-'}</td><td>${o.customer_phone||'-'}</td><td>${o.customer_phone2||'-'}</td><td>${o.address||'-'}</td><td>${o.area||'-'}</td><td style="max-width:150px;white-space:normal">${o.description||'-'}</td><td>${o.amount||0} ج.م</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${dn}</td><td><button class="btn btn-sm btn-in" onclick="editO('${o.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-dg" onclick="delO('${o.id}')"><i class="fas fa-trash"></i></button></td></tr>`}).join('')}
 function filterO(){renderO()}
 function togAll(){const c=document.getElementById('selAll').checked;document.querySelectorAll('.oc').forEach(x=>x.checked=c)}
-function renderRecent(){document.getElementById('recentBody').innerHTML=allO.slice(0,8).map(o=>`<tr><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.customer_name}</td><td>${o.area||'-'}</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${new Date(o.created_at).toLocaleDateString('ar-EG')}</td></tr>`).join('')}
+function renderRecent(){const s=(document.getElementById('dashSearch')?.value||'').trim();let filtered=allO;if(s){filtered=allO.filter(o=>(o.customer_phone||'').includes(s)||(o.customer_phone2||'').includes(s))}document.getElementById('recentBody').innerHTML=filtered.slice(0,8).map(o=>`<tr><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.customer_name}</td><td>${o.sender_name||'-'}</td><td>${o.customer_phone||'-'}</td><td>${o.customer_phone2||'-'}</td><td>${o.address||'-'}</td><td>${o.area||'-'}</td><td>${o.amount||0} ج.م</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${new Date(o.created_at).toLocaleDateString('ar-EG')}</td></tr>`).join('')}
+function filterDash(){renderRecent()}
 function upStats(){document.getElementById('stAll').textContent=allO.length;document.getElementById('stPend').textContent=allO.filter(o=>o.status==='pending'||o.status==='processing').length;document.getElementById('stShip').textContent=allO.filter(o=>o.status==='shipped'||o.status==='out_for_delivery').length;document.getElementById('stDone').textContent=allO.filter(o=>o.status==='delivered').length;document.getElementById('stDrv').textContent=allD.length;document.getElementById('stRev').textContent=allO.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.amount||0),0).toLocaleString()}
 
 function genCode(){return'BOL-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).substr(2,4).toUpperCase()}
@@ -400,18 +411,19 @@ function populateAddDriverDD(){
 }
 
 async function addO(){
-    const n=document.getElementById('aoN').value.trim(),p=document.getElementById('aoP').value.trim(),a=document.getElementById('aoA').value.trim(),ar=document.getElementById('aoAr').value.trim(),d=document.getElementById('aoD').value.trim(),am=parseFloat(document.getElementById('aoAm').value)||0;
+    const n=document.getElementById('aoN').value.trim(),sn=document.getElementById('aoSN').value.trim(),p=document.getElementById('aoP').value.trim(),p2=document.getElementById('aoP2').value.trim(),a=document.getElementById('aoA').value.trim(),ar=document.getElementById('aoAr').value.trim(),d=document.getElementById('aoD').value.trim(),am=parseFloat(document.getElementById('aoAm').value)||0;
     const drvId=document.getElementById('aoDrv').value;
     // Validate mandatory driver
     if(!drvId){document.getElementById('aoDrvReq').style.display='block';return toast('يجب اختيار مندوب',1)}
     document.getElementById('aoDrvReq').style.display='none';
-    if(!n)return toast('أدخل الاسم',1);
+    if(!n)return toast('أدخل اسم العميل',1);
+    if(!sn)return toast('أدخل اسم المرسل',1);
     const tc=genCode();
-    try{if(!sb)throw new Error('لا يوجد اتصال');await sb.from('orders').insert({tracking_code:tc,customer_name:n,customer_phone:p,address:a,area:ar,description:d,amount:am,status:'pending',source:'admin',driver_id:drvId});toast('تم إضافة: '+tc);closeM('addOM');['aoN','aoP','aoA','aoAr','aoD','aoAm'].forEach(id=>document.getElementById(id).value='');document.getElementById('aoDrv').value='';loadO()}catch(e){toast('خطأ: '+e.message,1)}
+    try{if(!sb)throw new Error('لا يوجد اتصال');await sb.from('orders').insert({tracking_code:tc,customer_name:n,sender_name:sn,customer_phone:p,customer_phone2:p2,address:a,area:ar,description:d,amount:am,status:'pending',source:'admin',driver_id:drvId});toast('تم إضافة: '+tc);closeM('addOM');['aoN','aoSN','aoP','aoP2','aoA','aoAr','aoD','aoAm'].forEach(id=>document.getElementById(id).value='');document.getElementById('aoDrv').value='';loadO()}catch(e){toast('خطأ: '+e.message,1)}
 }
 
-function editO(id){const o=allO.find(x=>x.id==id);if(!o)return;document.getElementById('eoId').value=o.id;document.getElementById('eoSt').value=o.status;document.getElementById('eoNt').value=o.notes||'';const dd=document.getElementById('eoDrv');dd.innerHTML='<option value="">-- بدون --</option>'+allD.map(d=>`<option value="${d.id}" ${d.id==o.driver_id?'selected':''}>${d.name}</option>`).join('');openM('editOM')}
-async function saveEdit(){const id=document.getElementById('eoId').value,st=document.getElementById('eoSt').value,dr=document.getElementById('eoDrv').value||null,nt=document.getElementById('eoNt').value;await sb.from('orders').update({status:st,driver_id:dr,notes:nt}).eq('id',id);toast('تم التحديث');closeM('editOM');loadO()}
+function editO(id){const o=allO.find(x=>x.id==id);if(!o)return;document.getElementById('eoId').value=o.id;document.getElementById('eoN').value=o.customer_name||'';document.getElementById('eoSN').value=o.sender_name||'';document.getElementById('eoP').value=o.customer_phone||'';document.getElementById('eoP2').value=o.customer_phone2||'';document.getElementById('eoA').value=o.address||'';document.getElementById('eoAr').value=o.area||'';document.getElementById('eoDs').value=o.description||'';document.getElementById('eoAm').value=o.amount||0;document.getElementById('eoSt').value=o.status;document.getElementById('eoNt').value=o.notes||'';const dd=document.getElementById('eoDrv');dd.innerHTML='<option value="">-- بدون --</option>'+allD.map(d=>`<option value="${d.id}" ${d.id==o.driver_id?'selected':''}>${d.name}</option>`).join('');openM('editOM')}
+async function saveEdit(){const id=document.getElementById('eoId').value,n=document.getElementById('eoN').value.trim(),sn=document.getElementById('eoSN').value.trim(),p=document.getElementById('eoP').value.trim(),p2=document.getElementById('eoP2').value.trim(),a=document.getElementById('eoA').value.trim(),ar=document.getElementById('eoAr').value.trim(),ds=document.getElementById('eoDs').value.trim(),am=parseFloat(document.getElementById('eoAm').value)||0,st=document.getElementById('eoSt').value,dr=document.getElementById('eoDrv').value||null,nt=document.getElementById('eoNt').value;await sb.from('orders').update({customer_name:n,sender_name:sn,customer_phone:p,customer_phone2:p2,address:a,area:ar,description:ds,amount:am,status:st,driver_id:dr,notes:nt}).eq('id',id);toast('تم التحديث');closeM('editOM');loadO()}
 async function delO(id){if(!confirm('حذف هذا الطلب؟'))return;await sb.from('orders').delete().eq('id',id);toast('تم الحذف');loadO()}
 
 // ===== DRIVERS =====
