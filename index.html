@@ -254,6 +254,12 @@
         <div class="fg"><label>المنطقة</label><input id="oArea" placeholder="البدرشين، العياط..."></div>
         <div class="fg"><label>العنوان التفصيلي *</label><input id="oAddress"></div>
         <div class="fg"><label>محتوى الشحنة</label><textarea id="oDesc"></textarea></div>
+        <div class="fg"><label>إمكانية فتح الشحنة</label>
+        <div style="display:flex;gap:18px;padding:6px 0">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500"><input type="radio" name="oOpen" value="yes" checked> مسموح</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500"><input type="radio" name="oOpen" value="no"> غير مسموح</label>
+        </div></div>
+        <div class="fg"><label>عدد القطع</label><input type="number" id="oPieces" value="1" min="1"></div>
         <div class="fg"><label>إجمالي المبلغ (جنيه)</label><input type="number" id="oAmount" placeholder="0"></div>
         <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px;margin:12px 0;text-align:center;color:#c2410c;font-weight:700;font-size:.9rem"><i class="fas fa-info-circle"></i> في حالة الرفض يتم دفع الشحن</div>
         <div class="mb">
@@ -385,6 +391,8 @@
                 html += '<p><strong>المنطقة:</strong> '+(d.area||'-')+'</p>';
                 html += '<p><strong>العنوان:</strong> '+(d.address||'-')+'</p>';
                 html += '<p><strong>المبلغ:</strong> '+(d.amount||0)+' ج.م</p>';
+                html += '<p><strong>عدد القطع:</strong> '+(d.pieces_count||1)+'</p>';
+                html += '<p><strong>إمكانية الفتح:</strong> '+(d.allow_open===false?'غير مسموح':'مسموح')+'</p>';
                 html += '<p><strong>التاريخ:</strong> '+new Date(d.created_at).toLocaleDateString('ar-EG')+'</p>';
                 html += '</div><div class="tl">';
                 var names = ['تم استلام الطلب','قيد التجهيز','تم الشحن','في الطريق','تم التسليم'];
@@ -420,6 +428,8 @@
         var g = document.getElementById('oGov').value.trim();
         var ds = document.getElementById('oDesc').value.trim();
         var am = parseFloat(document.getElementById('oAmount').value) || 0;
+        var allow = (document.querySelector('input[name="oOpen"]:checked') || {}).value === 'yes';
+        var pieces = parseInt(document.getElementById('oPieces').value) || 1;
         if (!n || !sn || !sp || !ph || !ad || !g) return showToast('يرجى ملء الحقول المطلوبة', true);
         var tc = genCode();
         try {
@@ -428,6 +438,7 @@
                 tracking_code: tc, customer_name: n, sender_name: sn, sender_phone: sp,
                 customer_phone: ph, customer_phone2: ph2,
                 address: ad, area: ar, governorate: g, description: ds, amount: am,
+                allow_open: allow, pieces_count: pieces,
                 status: 'pending', source: 'website'
             });
             if (res.error) throw res.error;
@@ -435,6 +446,9 @@
             closeModal('orderModal');
             var fields = ['oName','oSender','oSenderPhone','oPhone','oPhone2','oAddress','oArea','oGov','oDesc','oAmount'];
             for (var i = 0; i < fields.length; i++) document.getElementById(fields[i]).value = '';
+            document.getElementById('oPieces').value = '1';
+            var defOpen = document.querySelector('input[name="oOpen"][value="yes"]');
+            if (defOpen) defOpen.checked = true;
         } catch(e) {
             showToast('خطأ: ' + (e.message || e), true);
         }
