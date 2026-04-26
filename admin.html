@@ -292,7 +292,21 @@
 
 <div class="mov" id="drvM"><div class="mdl"><button class="mc" onclick="closeM('drvM')">&times;</button><h2 id="dmTitle"><i class="fas fa-user-plus"></i> إضافة مندوب</h2><input type="hidden" id="dmId"><div class="fg"><label>الاسم</label><input id="dmN"></div><div class="fg"><label>الهاتف</label><input id="dmP"></div><div class="fg"><label>رقم اللوحة</label><input id="dmPl"></div><div class="fg"><label>كود الدخول (فريد)</label><input id="dmC"></div><div class="mbtns"><button class="btn btn-p" onclick="saveDrv()" style="flex:1"><i class="fas fa-save"></i> حفظ</button><button class="btn btn-o" onclick="closeM('drvM')">إلغاء</button></div></div></div>
 
-<div class="mov" id="aqrM"><div class="mdl"><button class="mc" onclick="closeAQR()">&times;</button><h2><i class="fas fa-qrcode"></i> مسح QR</h2><div id="adminQrReader"></div><div id="aqrRes" style="display:none;margin-top:10px;padding:10px;background:#f0fdf4;border-radius:8px"><p style="color:var(--success);font-weight:700" id="aqrTxt"></p></div><button class="btn btn-o" onclick="closeAQR()" style="margin-top:10px;width:100%">إغلاق</button></div></div>
+<div class="mov" id="aqrM"><div class="mdl" style="max-width:480px"><button class="mc" onclick="closeAQR()">&times;</button><h2><i class="fas fa-qrcode"></i> مسح QR Code</h2>
+<div id="adminQrReader" style="display:block"></div>
+<div id="aqrLoading" style="display:none;text-align:center;padding:20px;color:var(--text-l)"><i class="fas fa-spinner fa-spin"></i> جاري البحث عن الأوردر...</div>
+<div id="aqrNotFound" style="display:none;margin-top:10px;padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:var(--danger);font-weight:700;text-align:center"><i class="fas fa-exclamation-triangle"></i> <span id="aqrNotFoundTxt">الأوردر غير موجود</span></div>
+<div id="aqrOrder" style="display:none;margin-top:10px">
+  <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;margin-bottom:10px;text-align:center;color:var(--success);font-weight:700"><i class="fas fa-check-circle"></i> تم العثور على الأوردر</div>
+  <div style="background:var(--bg);border-radius:8px;padding:12px;font-size:.9rem;line-height:1.8" id="aqrOrderInfo"></div>
+  <div class="fg" style="margin-top:12px"><label>تغيير الحالة:</label>
+    <select id="aqrSt" style="width:100%;padding:10px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:'Tajawal';font-size:.9rem">
+      <option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option>
+    </select>
+  </div>
+  <div class="mbtns" style="margin-top:12px"><button class="btn btn-p" onclick="aqrSave()" style="flex:1"><i class="fas fa-save"></i> حفظ التحديث</button><button class="btn btn-in" onclick="aqrRescan()"><i class="fas fa-redo"></i> مسح آخر</button></div>
+</div>
+<button class="btn btn-o" onclick="closeAQR()" style="margin-top:10px;width:100%">إغلاق</button></div></div>
 
 <div class="toast" id="toast"></div>
 
@@ -302,7 +316,7 @@ const SB_KEY='sb_publishable_RFQUE84QOPgMOy3YwEr9Wg_PS7dCd_V';
 let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn('SB:',e)}
 
 const PASS_KEY='bol_admin_pass',DEF_PASS='admin123';
-let allO=[],allD=[],map=null,dMarks={},cMark=null,cLat=29.851,cLng=31.2765,aqrS=null;
+let allO=[],allD=[],map=null,dMarks={},cMark=null,cLat=29.851,cLng=31.2765,aqrS=null,aqrCurrent=null;
 
 // ===== LOGIN =====
 document.getElementById('loginBtn').addEventListener('click',doLogin);
@@ -513,17 +527,19 @@ async function renderTP(orders){
     const parts=await Promise.all(orders.map(async o=>{
         const dn=allD.find(d=>d.id===o.driver_id)?.name||'-';
         const dt=new Date(o.created_at).toLocaleDateString('ar-EG');
-        const qrPayload=JSON.stringify({t:o.tracking_code,n:o.customer_name||'',sn:o.sender_name||'',sp:o.sender_phone||'',p2:o.customer_phone2||'',a:o.address||'',ar:o.area||'',g:o.governorate||'',d:o.description||'',am:o.amount||0,s:o.status||'',dr:dn,ao:o.allow_open!==false,pc:o.pieces_count||1});
+        const qrPayload=o.tracking_code;
         const qrImg=await makeQR(qrPayload);
         const allowTxt=o.allow_open===false?'<span style="color:#b91c1c">✗ غير مسموح فتح الشحنة</span>':'<span style="color:#15803d">✓ مسموح بفتح الشحنة</span>';
         const piecesTxt=o.pieces_count||1;
         return `<div class="to">
 <div class="to-hdr">🚚 Buy On Line</div>
-<div class="to-body">
-<div class="to-qr-col">
-${qrImg?`<div class="to-qr"><img src="${qrImg}" alt="QR"></div>`:'<div class="to-qr-na">[QR]</div>'}
-<div class="to-tc">${o.tracking_code}</div>
+<div class="to-sender-strip">
+<div class="ss-label">المرسل</div>
+<div class="ss-name">${o.sender_name||'-'}</div>
+<div class="ss-sep">|</div>
+<div class="ss-phone">${o.sender_phone||'-'}</div>
 </div>
+<div class="to-body">
 <div class="to-data-col">
 <p><strong>اسم العميل:</strong> ${o.customer_name||'-'}</p>
 <p><strong>رقم العميل:</strong> ${o.customer_phone||'-'}</p>
@@ -534,10 +550,9 @@ ${qrImg?`<div class="to-qr"><img src="${qrImg}" alt="QR"></div>`:'<div class="to
 <p><strong>عدد القطع:</strong> ${piecesTxt} &nbsp;|&nbsp; ${allowTxt}</p>
 <p><strong>المبلغ:</strong> ${o.amount||0} ج.م &nbsp;|&nbsp; <strong>المندوب:</strong> ${dn} &nbsp;|&nbsp; <strong>التاريخ:</strong> ${dt}</p>
 </div>
-<div class="to-sender-col">
-<div class="sc-label">المرسل</div>
-<div class="sc-name">${o.sender_name||'-'}</div>
-<div class="sc-phone">${o.sender_phone||'-'}</div>
+<div class="to-qr-col">
+${qrImg?`<div class="to-qr"><img src="${qrImg}" alt="QR"></div>`:'<div class="to-qr-na">[QR]</div>'}
+<div class="to-tc">${o.tracking_code}</div>
 </div>
 </div>
 <div class="to-foot">في حالة الرفض يتم دفع الشحن</div>
@@ -579,18 +594,19 @@ body{font-family:'Tajawal',Arial,sans-serif;font-size:13px;margin:0;padding:0;co
 .to:nth-child(3n){page-break-after:always;margin-bottom:0}
 .to:last-child{page-break-after:auto}
 .to-hdr{text-align:center;font-size:22px;font-weight:900;letter-spacing:1px;border-bottom:2px solid #000;padding-bottom:3px;margin-bottom:5px;font-family:'Cairo','Tajawal',Arial,sans-serif}
-.to-body{display:flex;flex:1;gap:5px;direction:rtl}
-.to-qr-col{width:28mm;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-left:1px dashed #999;padding-left:4px}
+.to-sender-strip{display:flex;align-items:center;justify-content:center;gap:14px;background:#f3f4f6;border:2px solid #000;border-radius:6px;padding:6px 12px;margin-bottom:5px;direction:rtl}
+.ss-label{font-size:10.5px;font-weight:700;background:#000;color:#fff;padding:4px 12px;border-radius:4px;flex-shrink:0}
+.ss-name{font-weight:900;font-size:15px;line-height:1.2}
+.ss-sep{font-weight:700;color:#666;font-size:14px}
+.ss-phone{font-weight:700;font-size:14px;direction:ltr;letter-spacing:.5px}
+.to-body{display:flex;flex:1;gap:6px;direction:rtl}
+.to-data-col{flex:1;display:flex;flex-direction:column;gap:1px;font-size:13px;padding:0 4px}
+.to-data-col p{margin:1.5px 0;line-height:1.35}
+.to-data-col strong{font-weight:700}
+.to-qr-col{width:30mm;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-right:1px dashed #999;padding-right:4px}
 .to-qr img{width:24mm;height:24mm;display:block}
 .to-qr-na{font-size:10px;color:#999;text-align:center;padding:8mm 0}
 .to-tc{font-family:monospace;font-size:10.5px;font-weight:700;text-align:center;word-break:break-all;line-height:1.2}
-.to-data-col{flex:1;display:flex;flex-direction:column;gap:2px;font-size:13.5px;padding:0 3px}
-.to-data-col p{margin:1.5px 0;line-height:1.35}
-.to-data-col strong{font-weight:700}
-.to-sender-col{width:34mm;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px solid #000;border-radius:6px;background:#f3f4f6;padding:6px 4px}
-.sc-label{font-size:10px;font-weight:700;background:#000;color:#fff;padding:3px 12px;border-radius:3px}
-.sc-name{font-weight:900;font-size:15px;line-height:1.2;text-align:center;word-break:break-word}
-.sc-phone{font-weight:700;font-size:14px;direction:ltr;letter-spacing:.5px}
 .to-foot{text-align:center;font-weight:900;font-size:12px;border-top:1.5px dashed #000;padding-top:3px;margin-top:3px;color:#000}
 @media print{
   body{margin:0}
@@ -604,8 +620,74 @@ body{font-family:'Tajawal',Arial,sans-serif;font-size:13px;margin:0;padding:0;co
 async function loadMsg(){if(!sb)return;const{data}=await sb.from('messages').select('*').order('created_at',{ascending:false});document.getElementById('msgBody').innerHTML=(data||[]).map(m=>`<tr><td>${m.name}</td><td>${m.phone||'-'}</td><td>${m.email||'-'}</td><td style="max-width:200px;white-space:normal">${m.message}</td><td>${new Date(m.created_at).toLocaleDateString('ar-EG')}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-m)">لا توجد رسائل</td></tr>'}
 
 // ===== QR =====
-function openAQR(){openM('aqrM');document.getElementById('aqrRes').style.display='none';setTimeout(()=>{try{if(!aqrS)aqrS=new Html5Qrcode("adminQrReader");aqrS.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},async(text)=>{aqrS.stop();document.getElementById('aqrRes').style.display='block';try{const d=JSON.parse(text);const tc=genCode();if(sb)await sb.from('orders').insert({tracking_code:tc,customer_name:d.name||'QR',customer_phone:d.phone||'',address:d.address||'',area:d.area||'',description:d.desc||'',amount:d.amount||0,status:'pending',source:'admin_qr'});document.getElementById('aqrTxt').innerHTML=`<i class="fas fa-check-circle"></i> تم إضافة: ${tc}`;loadO()}catch(e){document.getElementById('aqrTxt').innerHTML=`<i class="fas fa-barcode"></i> كود: ${text}`;document.getElementById('oSearch').value=text;filterO()}}).catch(e=>console.log('QR:',e))}catch(e){}},300)}
-function closeAQR(){if(aqrS)aqrS.stop().catch(()=>{});closeM('aqrM')}
+function openAQR(){
+    openM('aqrM');
+    aqrCurrent=null;
+    document.getElementById('adminQrReader').style.display='block';
+    document.getElementById('aqrLoading').style.display='none';
+    document.getElementById('aqrNotFound').style.display='none';
+    document.getElementById('aqrOrder').style.display='none';
+    setTimeout(()=>aqrStartScan(),300);
+}
+
+function aqrStartScan(){
+    try{
+        if(!aqrS)aqrS=new Html5Qrcode("adminQrReader");
+        aqrS.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},async(text)=>{
+            try{await aqrS.stop()}catch(e){}
+            document.getElementById('adminQrReader').style.display='none';
+            document.getElementById('aqrLoading').style.display='block';
+            // Extract tracking_code (support raw text or legacy JSON)
+            let tc=text.trim();
+            try{const j=JSON.parse(text);if(j&&j.t)tc=j.t}catch(e){}
+            if(!sb){document.getElementById('aqrLoading').style.display='none';document.getElementById('aqrNotFound').style.display='block';document.getElementById('aqrNotFoundTxt').textContent='لا يوجد اتصال بقاعدة البيانات';return}
+            const{data,error}=await sb.from('orders').select('*').eq('tracking_code',tc).single();
+            document.getElementById('aqrLoading').style.display='none';
+            if(error||!data){
+                document.getElementById('aqrNotFound').style.display='block';
+                document.getElementById('aqrNotFoundTxt').textContent='الأوردر غير موجود: '+tc;
+                return;
+            }
+            aqrCurrent=data;
+            const dn=allD.find(d=>d.id===data.driver_id)?.name||'-';
+            document.getElementById('aqrOrderInfo').innerHTML=`
+                <p><strong>رقم التتبع:</strong> <span style="color:var(--orange);font-weight:900">${data.tracking_code}</span></p>
+                <p><strong>المرسل:</strong> ${data.sender_name||'-'} ${data.sender_phone?'('+data.sender_phone+')':''}</p>
+                <p><strong>العميل:</strong> ${data.customer_name||'-'} ${data.customer_phone?'('+data.customer_phone+')':''}</p>
+                <p><strong>المحافظة/المنطقة:</strong> ${data.governorate||'-'} / ${data.area||'-'}</p>
+                <p><strong>العنوان:</strong> ${data.address||'-'}</p>
+                <p><strong>عدد القطع:</strong> ${data.pieces_count||1} | <strong>الفتح:</strong> ${data.allow_open===false?'غير مسموح':'مسموح'}</p>
+                <p><strong>المبلغ:</strong> ${data.amount||0} ج.م</p>
+                <p><strong>المندوب:</strong> ${dn}</p>
+                <p><strong>الحالة الحالية:</strong> <span class="badge b-${data.status}">${stMap[data.status]||data.status}</span></p>
+            `;
+            document.getElementById('aqrSt').value=data.status||'pending';
+            document.getElementById('aqrOrder').style.display='block';
+        }).catch(e=>console.log('QR start err:',e));
+    }catch(e){console.log('QR init err:',e)}
+}
+
+async function aqrSave(){
+    if(!aqrCurrent||!sb)return;
+    const newSt=document.getElementById('aqrSt').value;
+    if(newSt===aqrCurrent.status){toast('لم يتم تغيير الحالة',1);return}
+    try{
+        await sb.from('orders').update({status:newSt}).eq('id',aqrCurrent.id);
+        toast('تم تحديث الحالة لـ: '+(stMap[newSt]||newSt));
+        loadO();
+        closeAQR();
+    }catch(e){toast('خطأ: '+e.message,1)}
+}
+
+function aqrRescan(){
+    aqrCurrent=null;
+    document.getElementById('aqrOrder').style.display='none';
+    document.getElementById('aqrNotFound').style.display='none';
+    document.getElementById('adminQrReader').style.display='block';
+    setTimeout(()=>aqrStartScan(),300);
+}
+
+function closeAQR(){if(aqrS){aqrS.stop().catch(()=>{})}aqrCurrent=null;closeM('aqrM')}
 
 // ===== UTILS =====
 function openM(id){document.getElementById(id).classList.add('show');if(id==='addOM')populateAddDriverDD()}
