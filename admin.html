@@ -519,19 +519,12 @@ async function renderTP(orders){
         const piecesTxt=o.pieces_count||1;
         return `<div class="to">
 <div class="to-hdr">🚚 Buy On Line</div>
-<div class="to-sender-strip">
-<div class="ss-label">المرسل</div>
-<div class="ss-data">
-<div class="ss-name">${o.sender_name||'-'}</div>
-<div class="ss-phone">${o.sender_phone||'-'}</div>
-</div>
-</div>
 <div class="to-body">
-<div class="to-left">
-${qrImg?`<div class="to-qr"><img src="${qrImg}" alt="QR"></div>`:'<div class="to-qr-na">[QR غير متاح]</div>'}
+<div class="to-qr-col">
+${qrImg?`<div class="to-qr"><img src="${qrImg}" alt="QR"></div>`:'<div class="to-qr-na">[QR]</div>'}
 <div class="to-tc">${o.tracking_code}</div>
 </div>
-<div class="to-right">
+<div class="to-data-col">
 <p><strong>اسم العميل:</strong> ${o.customer_name||'-'}</p>
 <p><strong>رقم العميل:</strong> ${o.customer_phone||'-'}</p>
 <p><strong>رقم آخر:</strong> ${o.customer_phone2||'-'}</p>
@@ -540,6 +533,11 @@ ${qrImg?`<div class="to-qr"><img src="${qrImg}" alt="QR"></div>`:'<div class="to
 <p><strong>محتوى الشحنة:</strong> ${o.description||'-'}</p>
 <p><strong>عدد القطع:</strong> ${piecesTxt} &nbsp;|&nbsp; ${allowTxt}</p>
 <p><strong>المبلغ:</strong> ${o.amount||0} ج.م &nbsp;|&nbsp; <strong>المندوب:</strong> ${dn} &nbsp;|&nbsp; <strong>التاريخ:</strong> ${dt}</p>
+</div>
+<div class="to-sender-col">
+<div class="sc-label">المرسل</div>
+<div class="sc-name">${o.sender_name||'-'}</div>
+<div class="sc-phone">${o.sender_phone||'-'}</div>
 </div>
 </div>
 <div class="to-foot">في حالة الرفض يتم دفع الشحن</div>
@@ -576,26 +574,24 @@ function doPrint(){
 <style>
 @page{size:A4;margin:5mm}
 *{box-sizing:border-box}
-body{font-family:'Tajawal',Arial,sans-serif;font-size:11px;margin:0;padding:0;color:#000}
+body{font-family:'Tajawal',Arial,sans-serif;font-size:13px;margin:0;padding:0;color:#000}
 .to{width:200mm;height:92mm;border:1.5px solid #000;border-radius:4px;padding:5mm;display:flex;flex-direction:column;page-break-inside:avoid;margin-bottom:3mm;background:#fff}
 .to:nth-child(3n){page-break-after:always;margin-bottom:0}
 .to:last-child{page-break-after:auto}
 .to-hdr{text-align:center;font-size:22px;font-weight:900;letter-spacing:1px;border-bottom:2px solid #000;padding-bottom:3px;margin-bottom:5px;font-family:'Cairo','Tajawal',Arial,sans-serif}
-.to-sender-strip{display:flex;align-items:center;background:#f3f4f6;border:2px solid #000;border-radius:6px;padding:5px 10px;margin-bottom:5px;gap:10px;direction:rtl}
-.ss-label{font-size:10px;font-weight:700;background:#000;color:#fff;padding:6px 10px;border-radius:4px;flex-shrink:0}
-.ss-data{flex:1;display:flex;justify-content:space-around;align-items:center;gap:14px}
-.ss-name{font-weight:900;font-size:15px;line-height:1.2}
-.ss-phone{font-weight:700;font-size:14px;direction:ltr;letter-spacing:.5px}
-.to-body{display:flex;flex:1;gap:8px;direction:rtl}
-.to-left{width:36mm;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-left:1px dashed #999;padding-left:6px}
-.to-qr{margin:0}
-.to-qr img{width:30mm;height:30mm;display:block}
+.to-body{display:flex;flex:1;gap:5px;direction:rtl}
+.to-qr-col{width:28mm;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-left:1px dashed #999;padding-left:4px}
+.to-qr img{width:24mm;height:24mm;display:block}
 .to-qr-na{font-size:10px;color:#999;text-align:center;padding:8mm 0}
-.to-tc{font-family:monospace;font-size:11px;font-weight:700;margin-top:2px;text-align:center;word-break:break-all}
-.to-right{flex:1;display:flex;flex-direction:column;gap:1px;font-size:11.5px;padding-right:2px}
-.to-right p{margin:1.5px 0;line-height:1.3}
-.to-right strong{font-weight:700}
-.to-foot{text-align:center;font-weight:900;font-size:11.5px;border-top:1.5px dashed #000;padding-top:3px;margin-top:3px;color:#000}
+.to-tc{font-family:monospace;font-size:10.5px;font-weight:700;text-align:center;word-break:break-all;line-height:1.2}
+.to-data-col{flex:1;display:flex;flex-direction:column;gap:2px;font-size:13.5px;padding:0 3px}
+.to-data-col p{margin:1.5px 0;line-height:1.35}
+.to-data-col strong{font-weight:700}
+.to-sender-col{width:34mm;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px solid #000;border-radius:6px;background:#f3f4f6;padding:6px 4px}
+.sc-label{font-size:10px;font-weight:700;background:#000;color:#fff;padding:3px 12px;border-radius:3px}
+.sc-name{font-weight:900;font-size:15px;line-height:1.2;text-align:center;word-break:break-word}
+.sc-phone{font-weight:700;font-size:14px;direction:ltr;letter-spacing:.5px}
+.to-foot{text-align:center;font-weight:900;font-size:12px;border-top:1.5px dashed #000;padding-top:3px;margin-top:3px;color:#000}
 @media print{
   body{margin:0}
   .to{margin-bottom:3mm}
