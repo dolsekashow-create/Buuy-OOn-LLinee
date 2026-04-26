@@ -245,14 +245,17 @@
     <div class="modal">
         <button class="mc" id="closeOrderModal">&times;</button>
         <h2><i class="fas fa-plus-circle"></i> إضافة طلب جديد</h2>
-        <div class="fg"><label>اسم العميل *</label><input id="oName"></div>
         <div class="fg"><label>اسم المرسل *</label><input id="oSender"></div>
-        <div class="fg"><label>رقم الهاتف 1 *</label><input id="oPhone"></div>
-        <div class="fg"><label>رقم الهاتف 2</label><input id="oPhone2"></div>
-        <div class="fg"><label>العنوان *</label><input id="oAddress"></div>
+        <div class="fg"><label>رقم المرسل *</label><input id="oSenderPhone"></div>
+        <div class="fg"><label>اسم العميل *</label><input id="oName"></div>
+        <div class="fg"><label>رقم العميل *</label><input id="oPhone"></div>
+        <div class="fg"><label>رقم آخر</label><input id="oPhone2"></div>
+        <div class="fg"><label>المحافظة *</label><input id="oGov"></div>
         <div class="fg"><label>المنطقة</label><input id="oArea" placeholder="البدرشين، العياط..."></div>
-        <div class="fg"><label>وصف الطلب</label><textarea id="oDesc"></textarea></div>
-        <div class="fg"><label>المبلغ (جنيه)</label><input type="number" id="oAmount" placeholder="0"></div>
+        <div class="fg"><label>العنوان التفصيلي *</label><input id="oAddress"></div>
+        <div class="fg"><label>محتوى الشحنة</label><textarea id="oDesc"></textarea></div>
+        <div class="fg"><label>إجمالي المبلغ (جنيه)</label><input type="number" id="oAmount" placeholder="0"></div>
+        <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px;margin:12px 0;text-align:center;color:#c2410c;font-weight:700;font-size:.9rem"><i class="fas fa-info-circle"></i> في حالة الرفض يتم دفع الشحن</div>
         <div class="mb">
             <button class="btn btn-p" id="btnSubmitOrder" style="flex:1"><i class="fas fa-check"></i> إرسال الطلب</button>
             <button class="btn btn-o" id="cancelOrderModal">إلغاء</button>
@@ -373,12 +376,14 @@
                 html += '<div class="ts"><span class="sd '+(scl[d.status]||'sd-p')+'"></span><span>'+(sm[d.status]||d.status)+'</span></div>';
                 html += '<div class="td">';
                 html += '<p><strong>رقم التتبع:</strong> '+d.tracking_code+'</p>';
-                html += '<p><strong>العميل:</strong> '+d.customer_name+'</p>';
                 html += '<p><strong>المرسل:</strong> '+(d.sender_name||'-')+'</p>';
-                html += '<p><strong>الهاتف 1:</strong> '+(d.customer_phone||'-')+'</p>';
-                html += '<p><strong>الهاتف 2:</strong> '+(d.customer_phone2||'-')+'</p>';
-                html += '<p><strong>العنوان:</strong> '+(d.address||'-')+'</p>';
+                html += '<p><strong>رقم المرسل:</strong> '+(d.sender_phone||'-')+'</p>';
+                html += '<p><strong>العميل:</strong> '+d.customer_name+'</p>';
+                html += '<p><strong>رقم العميل:</strong> '+(d.customer_phone||'-')+'</p>';
+                html += '<p><strong>رقم آخر:</strong> '+(d.customer_phone2||'-')+'</p>';
+                html += '<p><strong>المحافظة:</strong> '+(d.governorate||'-')+'</p>';
                 html += '<p><strong>المنطقة:</strong> '+(d.area||'-')+'</p>';
+                html += '<p><strong>العنوان:</strong> '+(d.address||'-')+'</p>';
                 html += '<p><strong>المبلغ:</strong> '+(d.amount||0)+' ج.م</p>';
                 html += '<p><strong>التاريخ:</strong> '+new Date(d.created_at).toLocaleDateString('ar-EG')+'</p>';
                 html += '</div><div class="tl">';
@@ -407,25 +412,28 @@
     document.getElementById('btnSubmitOrder').addEventListener('click', async function(){
         var n = document.getElementById('oName').value.trim();
         var sn = document.getElementById('oSender').value.trim();
+        var sp = document.getElementById('oSenderPhone').value.trim();
         var ph = document.getElementById('oPhone').value.trim();
         var ph2 = document.getElementById('oPhone2').value.trim();
         var ad = document.getElementById('oAddress').value.trim();
         var ar = document.getElementById('oArea').value.trim();
+        var g = document.getElementById('oGov').value.trim();
         var ds = document.getElementById('oDesc').value.trim();
         var am = parseFloat(document.getElementById('oAmount').value) || 0;
-        if (!n || !sn || !ph || !ad) return showToast('يرجى ملء الحقول المطلوبة', true);
+        if (!n || !sn || !sp || !ph || !ad || !g) return showToast('يرجى ملء الحقول المطلوبة', true);
         var tc = genCode();
         try {
             if (!sb) throw new Error('لا يوجد اتصال');
             var res = await sb.from('orders').insert({
-                tracking_code: tc, customer_name: n, sender_name: sn, customer_phone: ph, customer_phone2: ph2,
-                address: ad, area: ar, description: ds, amount: am,
+                tracking_code: tc, customer_name: n, sender_name: sn, sender_phone: sp,
+                customer_phone: ph, customer_phone2: ph2,
+                address: ad, area: ar, governorate: g, description: ds, amount: am,
                 status: 'pending', source: 'website'
             });
             if (res.error) throw res.error;
             showToast('تم إرسال الطلب! رقم التتبع: ' + tc);
             closeModal('orderModal');
-            var fields = ['oName','oSender','oPhone','oPhone2','oAddress','oArea','oDesc','oAmount'];
+            var fields = ['oName','oSender','oSenderPhone','oPhone','oPhone2','oAddress','oArea','oGov','oDesc','oAmount'];
             for (var i = 0; i < fields.length; i++) document.getElementById(fields[i]).value = '';
         } catch(e) {
             showToast('خطأ: ' + (e.message || e), true);
