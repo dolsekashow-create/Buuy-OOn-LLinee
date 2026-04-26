@@ -158,7 +158,7 @@
 
 <!-- DASHBOARD -->
 <div class="page act" id="page-dashboard">
-<div class="ph"><h1><i class="fas fa-chart-pie"></i> لوحة القيادة</h1><div style="display:flex;gap:8px;align-items:center"><input type="text" placeholder="بحث برقم الموبايل أو كود التتبع..." id="dashSearch" oninput="filterDash()" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:'Tajawal';font-size:.88rem;outline:none;min-width:200px"><button class="btn btn-p btn-sm" onclick="openSearchQR('dashSearch','filterDash')" title="بحث بـ QR Code"><i class="fas fa-qrcode"></i> QR</button></div></div>
+<div class="ph"><h1><i class="fas fa-chart-pie"></i> لوحة القيادة</h1><div style="display:flex;gap:8px;align-items:center"><input type="text" placeholder="بحث (موبايل / كود / مسدس QR)..." id="dashSearch" oninput="filterDash()" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:'Tajawal';font-size:.88rem;outline:none;min-width:200px"></div></div>
 <div class="sgrid">
 <div class="scard"><div class="si"><i class="fas fa-box"></i></div><div class="sn2" id="stAll">0</div><div class="sl">إجمالي الطلبات</div></div>
 <div class="scard"><div class="si"><i class="fas fa-clock"></i></div><div class="sn2" id="stPend">0</div><div class="sl">قيد الانتظار</div></div>
@@ -173,7 +173,7 @@
 <!-- ORDERS -->
 <div class="page" id="page-orders">
 <div class="ph"><h1><i class="fas fa-box"></i> إدارة الطلبات</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="openM('addOM')"><i class="fas fa-plus"></i> إضافة طلب</button><button class="btn btn-o" onclick="openAQR()"><i class="fas fa-qrcode"></i> مسح QR</button></div></div>
-<div class="tw"><div class="tt"><input type="text" placeholder="بحث برقم الموبايل أو كود التتبع..." id="oSearch" oninput="filterO()"><button class="btn btn-p btn-sm" onclick="openSearchQR('oSearch','filterO')" title="بحث بـ QR Code"><i class="fas fa-qrcode"></i> QR</button><select id="oFilter" onchange="filterO()"><option value="">كل الحالات</option><option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option></select></div>
+<div class="tw"><div class="tt"><input type="text" placeholder="بحث (موبايل / كود / مسدس QR)..." id="oSearch" oninput="filterO()"><select id="oFilter" onchange="filterO()"><option value="">كل الحالات</option><option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option></select></div>
 <div style="overflow-x:auto"><table><thead><tr><th class="cc"><input type="checkbox" id="selAll" onchange="togAll()"></th><th>رقم التتبع</th><th>المرسل</th><th>رقم المرسل</th><th>العميل</th><th>رقم العميل</th><th>رقم آخر</th><th>المحافظة</th><th>المنطقة</th><th>العنوان</th><th>الوصف</th><th>المبلغ</th><th>الحالة</th><th>المندوب</th><th>إجراءات</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div>
 </div>
 
@@ -292,12 +292,6 @@
 
 <div class="mov" id="drvM"><div class="mdl"><button class="mc" onclick="closeM('drvM')">&times;</button><h2 id="dmTitle"><i class="fas fa-user-plus"></i> إضافة مندوب</h2><input type="hidden" id="dmId"><div class="fg"><label>الاسم</label><input id="dmN"></div><div class="fg"><label>الهاتف</label><input id="dmP"></div><div class="fg"><label>رقم اللوحة</label><input id="dmPl"></div><div class="fg"><label>كود الدخول (فريد)</label><input id="dmC"></div><div class="mbtns"><button class="btn btn-p" onclick="saveDrv()" style="flex:1"><i class="fas fa-save"></i> حفظ</button><button class="btn btn-o" onclick="closeM('drvM')">إلغاء</button></div></div></div>
 
-<div class="mov" id="searchQrM"><div class="mdl" style="max-width:420px"><button class="mc" onclick="closeSearchQR()">&times;</button><h2><i class="fas fa-qrcode"></i> بحث بـ QR Code</h2>
-<p style="color:var(--text-l);font-size:.88rem;margin-bottom:12px;text-align:center">وجّه الكاميرا على QR Code الأوردر للبحث عنه</p>
-<div id="searchQrReader" style="display:block;width:100%"></div>
-<div id="searchQrLoading" style="display:none;text-align:center;padding:20px;color:var(--text-l)"><i class="fas fa-spinner fa-spin"></i> جاري المسح...</div>
-<button class="btn btn-o" onclick="closeSearchQR()" style="margin-top:12px;width:100%">إلغاء</button></div></div>
-
 <div class="mov" id="aqrM"><div class="mdl" style="max-width:480px"><button class="mc" onclick="closeAQR()">&times;</button><h2><i class="fas fa-qrcode"></i> مسح QR Code</h2>
 <div id="adminQrReader" style="display:block"></div>
 <div id="aqrLoading" style="display:none;text-align:center;padding:20px;color:var(--text-l)"><i class="fas fa-spinner fa-spin"></i> جاري البحث عن الأوردر...</div>
@@ -322,7 +316,7 @@ const SB_KEY='sb_publishable_RFQUE84QOPgMOy3YwEr9Wg_PS7dCd_V';
 let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn('SB:',e)}
 
 const PASS_KEY='bol_admin_pass',DEF_PASS='admin123';
-let allO=[],allD=[],map=null,dMarks={},cMark=null,cLat=29.851,cLng=31.2765,aqrS=null,aqrCurrent=null,searchQrS=null,searchQrCtx=null;
+let allO=[],allD=[],map=null,dMarks={},cMark=null,cLat=29.851,cLng=31.2765,aqrS=null,aqrCurrent=null;
 
 // ===== LOGIN =====
 document.getElementById('loginBtn').addEventListener('click',doLogin);
@@ -625,52 +619,6 @@ body{font-family:'Tajawal',Arial,sans-serif;font-size:13px;margin:0;padding:0;co
 // ===== MESSAGES =====
 async function loadMsg(){if(!sb)return;const{data}=await sb.from('messages').select('*').order('created_at',{ascending:false});document.getElementById('msgBody').innerHTML=(data||[]).map(m=>`<tr><td>${m.name}</td><td>${m.phone||'-'}</td><td>${m.email||'-'}</td><td style="max-width:200px;white-space:normal">${m.message}</td><td>${new Date(m.created_at).toLocaleDateString('ar-EG')}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-m)">لا توجد رسائل</td></tr>'}
 
-// ===== SEARCH BY QR =====
-function openSearchQR(inputId,filterFn){
-    searchQrCtx={inputId:inputId,filterFn:filterFn};
-    openM('searchQrM');
-    document.getElementById('searchQrReader').style.display='block';
-    document.getElementById('searchQrLoading').style.display='none';
-    setTimeout(()=>searchQrStart(),300);
-}
-
-function searchQrStart(){
-    try{
-        if(!searchQrS)searchQrS=new Html5Qrcode("searchQrReader");
-        searchQrS.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},async(text)=>{
-            try{await searchQrS.stop()}catch(e){}
-            document.getElementById('searchQrReader').style.display='none';
-            document.getElementById('searchQrLoading').style.display='block';
-            // استخراج tracking_code (يدعم النص العادي أو JSON القديم)
-            let tc=text.trim();
-            try{const j=JSON.parse(text);if(j&&j.t)tc=j.t}catch(e){}
-            if(!searchQrCtx){closeSearchQR();return}
-            // ملء خانة البحث وتشغيل الفلتر
-            const inp=document.getElementById(searchQrCtx.inputId);
-            if(inp){
-                inp.value=tc;
-                if(typeof window[searchQrCtx.filterFn]==='function'){
-                    window[searchQrCtx.filterFn]();
-                }
-            }
-            // التحقق من وجود الأوردر
-            const found=allO.find(o=>(o.tracking_code||'').toLowerCase()===tc.toLowerCase());
-            if(found){
-                toast('تم العثور على الأوردر: '+tc);
-            }else{
-                toast('لم يتم العثور على أوردر بكود: '+tc,1);
-            }
-            closeSearchQR();
-        }).catch(e=>{console.log('QR start err:',e);toast('خطأ في تشغيل الكاميرا',1)});
-    }catch(e){console.log('QR init err:',e);toast('خطأ: '+e.message,1)}
-}
-
-function closeSearchQR(){
-    if(searchQrS){searchQrS.stop().catch(()=>{})}
-    searchQrCtx=null;
-    closeM('searchQrM');
-}
-
 // ===== QR =====
 function openAQR(){
     openM('aqrM');
@@ -745,6 +693,115 @@ function closeAQR(){if(aqrS){aqrS.stop().catch(()=>{})}aqrCurrent=null;closeM('a
 function openM(id){document.getElementById(id).classList.add('show');if(id==='addOM')populateAddDriverDD()}
 function closeM(id){document.getElementById(id).classList.remove('show')}
 function toast(m,err){const t=document.getElementById('toast');t.textContent=m;t.className='toast show'+(err?' err':'');setTimeout(()=>t.classList.remove('show'),3500)}
+
+// ===== GLOBAL BARCODE/QR SCANNER LISTENER =====
+// مسدس الباركود/QR بيشتغل زي الكيبورد:
+// بيكتب الكود حرف حرف بسرعة جداً وبعدها بيدوس Enter
+// الكود ده بيمسك القراءة من أي مكان في الصفحة وبيوديها للسيرش
+(function(){
+    let scanBuffer='';
+    let scanLastTime=0;
+    const SCAN_TIMEOUT=80; // ميلي ثانية بين كل حرف والتاني (المسدس أسرع من الإنسان بكتير)
+    const MIN_SCAN_LENGTH=4; // أقل عدد حروف عشان يعتبره قراءة من المسدس مش كتابة بايد
+
+    document.addEventListener('keydown',function(e){
+        // متشتغلش لو اليوزر بيكتب في input أو textarea (عشان الكتابة العادية)
+        const tag=(e.target&&e.target.tagName||'').toUpperCase();
+        const isTyping=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT';
+
+        const now=Date.now();
+        const gap=now-scanLastTime;
+
+        // لو فيه فجوة كبيرة بين الحروف، يبقى ده مش مسدس - امسح البفر
+        if(gap>SCAN_TIMEOUT&&scanBuffer.length>0){
+            scanBuffer='';
+        }
+        scanLastTime=now;
+
+        // Enter = نهاية القراءة
+        if(e.key==='Enter'){
+            if(scanBuffer.length>=MIN_SCAN_LENGTH&&gap<SCAN_TIMEOUT*scanBuffer.length+200){
+                // ده مسدس بيقرا
+                e.preventDefault();
+                e.stopPropagation();
+                handleScannerInput(scanBuffer);
+            }
+            scanBuffer='';
+            return;
+        }
+
+        // اجمع الحروف القابلة للطباعة
+        if(e.key&&e.key.length===1){
+            // لو اليوزر بيكتب بايده في input، متعملش حاجة
+            if(isTyping&&gap>SCAN_TIMEOUT){
+                scanBuffer='';
+                return;
+            }
+            scanBuffer+=e.key;
+        }
+    });
+
+    // معالجة قراءة المسدس
+    async function handleScannerInput(rawText){
+        let tc=rawText.trim();
+        // دعم QR قديم بصيغة JSON
+        try{const j=JSON.parse(rawText);if(j&&j.t)tc=j.t;else if(j&&j.tracking_code)tc=j.tracking_code}catch(e){}
+        if(!tc)return;
+
+        // اعرف الصفحة المفتوحة
+        const activePage=document.querySelector('.page.act');
+        const pageId=activePage?activePage.id:'';
+
+        let inputId='oSearch',filterFn='filterO';
+        if(pageId==='page-dashboard'){
+            inputId='dashSearch';filterFn='filterDash';
+        }
+        // لو الصفحة الحالية مش الأوردرات ولا الداشبورد، روح للأوردرات أوتوماتيك
+        if(pageId!=='page-dashboard'&&pageId!=='page-orders'){
+            // فعّل صفحة الأوردرات
+            document.querySelectorAll('.page').forEach(p=>p.classList.remove('act'));
+            const ordersPage=document.getElementById('page-orders');
+            if(ordersPage)ordersPage.classList.add('act');
+            // فعّل زرار الأوردرات في القائمة الجانبية
+            document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
+            const ordersBtn=document.querySelector('.ni[onclick*="orders"]');
+            if(ordersBtn)ordersBtn.classList.add('act');
+            inputId='oSearch';filterFn='filterO';
+        }
+
+        // حط الكود في خانة السيرش
+        const inp=document.getElementById(inputId);
+        if(inp){
+            inp.value=tc;
+            inp.focus();
+            if(typeof window[filterFn]==='function')window[filterFn]();
+        }
+
+        // ابحث محلياً
+        const localFound=allO.find(o=>(o.tracking_code||'').toLowerCase()===tc.toLowerCase());
+        if(localFound){
+            toast('✓ تم العثور: '+tc);
+            return;
+        }
+
+        // مش لاقي محلياً - اسأل قاعدة البيانات
+        if(sb){
+            try{
+                const{data}=await sb.from('orders').select('*').eq('tracking_code',tc).maybeSingle();
+                if(data){
+                    if(!allO.some(o=>o.id===data.id))allO.unshift(data);
+                    if(typeof window[filterFn]==='function')window[filterFn]();
+                    toast('✓ تم العثور: '+tc);
+                }else{
+                    toast('لا يوجد أوردر بكود: '+tc,1);
+                }
+            }catch(e){toast('خطأ: '+e.message,1)}
+        }
+    }
+
+    // اعرض رسالة تأكيد إن المسدس جاهز
+    console.log('%c📱 مسدس الباركود/QR جاهز','background:#f47920;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold');
+})();
 </script>
 </body>
 </html>
