@@ -435,13 +435,16 @@ function fixArabicLayout(s){
 function filterO(){
     const inp=document.getElementById('oSearch');
     if(inp&&inp.value){
-        // Detect if input contains Arabic characters that look like a mangled English code
+        // Only convert if input looks like a mangled tracking code:
+        // - Contains Arabic characters
+        // - After conversion, has the BOL- prefix or contains a hyphen with letters/numbers
+        // Names like "محمد" or "علي" will NOT trigger conversion
         const hasArabic=/[\u0600-\u06FF]/.test(inp.value);
         if(hasArabic){
-            const fixed=fixArabicLayout(inp.value);
-            // If the fixed version looks like a valid tracking code or alphanumeric ID, use it
-            if(/^[A-Za-z0-9\-_]+$/.test(fixed.trim())){
-                inp.value=fixed.toUpperCase();
+            const fixed=fixArabicLayout(inp.value).toUpperCase();
+            // Tracking codes have format like "BOL-XXXX-XXXX" - look for hyphen pattern
+            if(/^BOL[-\s]/.test(fixed)||/^[A-Z0-9]{2,}-[A-Z0-9]{2,}/.test(fixed)){
+                inp.value=fixed;
             }
         }
     }
