@@ -412,7 +412,41 @@ const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز
 async function loadO(){if(!sb)return;const{data}=await sb.from('orders').select('*').order('created_at',{ascending:false});allO=data||[];renderO();upStats();renderRecent()}
 function renderO(){const s=(document.getElementById('oSearch')?.value||'').trim().toLowerCase(),f=document.getElementById('oFilter')?.value||'';let fl=allO.filter(o=>{const ms=!s||o.customer_phone?.includes(s)||o.customer_phone2?.includes(s)||o.sender_phone?.includes(s)||o.tracking_code?.toLowerCase().includes(s)||o.customer_name?.toLowerCase().includes(s)||o.sender_name?.toLowerCase().includes(s);const mf=!f||o.status===f;return ms&&mf});
 document.getElementById('ordersBody').innerHTML=fl.map(o=>{const dn=allD.find(d=>d.id===o.driver_id)?.name||'-';return`<tr><td class="cc"><input type="checkbox" class="oc" value="${o.id}" data-code="${o.tracking_code}"></td><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.sender_name||'-'}</td><td>${o.sender_phone||'-'}</td><td>${o.customer_name}</td><td>${o.customer_phone||'-'}</td><td>${o.customer_phone2||'-'}</td><td>${o.governorate||'-'}</td><td>${o.area||'-'}</td><td>${o.address||'-'}</td><td style="max-width:150px;white-space:normal">${o.description||'-'}</td><td>${o.amount||0} ج.م</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${dn}</td><td><button class="btn btn-sm btn-in" onclick="editO('${o.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-sc" onclick="copyO('${o.id}')" title="نسخ بيانات الطلب"><i class="fas fa-copy"></i> Copy</button> <button class="btn btn-sm btn-dg" onclick="delO('${o.id}')"><i class="fas fa-trash"></i></button></td></tr>`}).join('')}
-function filterO(){renderO()}
+// Arabic <-> English keyboard layout map (Egyptian/standard Arabic 101 layout)
+// Used to fix QR scanner output when Windows keyboard is set to Arabic
+const arEnMap={
+    'ذ':'`','ض':'q','ص':'w','ث':'e','ق':'r','ف':'t','غ':'y','ع':'u','ه':'i','خ':'o','ح':'p','ج':'[','د':']',
+    'ش':'a','س':'s','ي':'d','ب':'f','ل':'g','ا':'h','ت':'j','ن':'k','م':'l','ك':';','ط':"'",
+    'ئ':'z','ء':'x','ؤ':'c','ر':'v','لا':'B','ى':'n','ة':'m','و':',','ز':'.','ظ':'/',
+    'ّ':'~','َ':'Q','ً':'W','ُ':'E','ٌ':'R','ِ':'A','ٍ':'S','ْ':'X',
+    'أ':'H','إ':'Y','آ':'N','ـ':'J','،':'K','؛':'P','؟':'?','÷':'?','×':'\\','>':'>','<':'<'
+};
+function fixArabicLayout(s){
+    if(!s)return s;
+    // First handle 'لا' as a 2-char ligature -> 'B'
+    s=s.replace(/لا/g,'B').replace(/لأ/g,'B').replace(/لإ/g,'B').replace(/لآ/g,'B');
+    let r='';
+    for(let i=0;i<s.length;i++){
+        const c=s[i];
+        r+=arEnMap[c]!==undefined?arEnMap[c]:c;
+    }
+    return r;
+}
+function filterO(){
+    const inp=document.getElementById('oSearch');
+    if(inp&&inp.value){
+        // Detect if input contains Arabic characters that look like a mangled English code
+        const hasArabic=/[\u0600-\u06FF]/.test(inp.value);
+        if(hasArabic){
+            const fixed=fixArabicLayout(inp.value);
+            // If the fixed version looks like a valid tracking code or alphanumeric ID, use it
+            if(/^[A-Za-z0-9\-_]+$/.test(fixed.trim())){
+                inp.value=fixed.toUpperCase();
+            }
+        }
+    }
+    renderO();
+}
 function togAll(){const c=document.getElementById('selAll').checked;document.querySelectorAll('.oc').forEach(x=>x.checked=c)}
 function renderRecent(){const s=(document.getElementById('dashSearch')?.value||'').trim();let filtered=allO;if(s){filtered=allO.filter(o=>(o.customer_phone||'').includes(s)||(o.customer_phone2||'').includes(s)||(o.sender_phone||'').includes(s))}document.getElementById('recentBody').innerHTML=filtered.slice(0,8).map(o=>`<tr><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.sender_name||'-'}</td><td>${o.sender_phone||'-'}</td><td>${o.customer_name}</td><td>${o.customer_phone||'-'}</td><td>${o.customer_phone2||'-'}</td><td>${o.governorate||'-'}</td><td>${o.area||'-'}</td><td>${o.address||'-'}</td><td>${o.amount||0} ج.م</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${new Date(o.created_at).toLocaleDateString('ar-EG')}</td></tr>`).join('')}
 function filterDash(){renderRecent()}
@@ -520,9 +554,15 @@ async function renderTP(orders){
 <div class="to-hdr">🚚 Buy On Line</div>
 <div class="to-sender-strip">
 <div class="ss-label">المرسل</div>
+<div class="ss-block">
+<div class="ss-key">اسم المرسل</div>
 <div class="ss-name">${o.sender_name||'-'}</div>
+</div>
 <div class="ss-sep">|</div>
+<div class="ss-block">
+<div class="ss-key">رقم المرسل</div>
 <div class="ss-phone">${o.sender_phone||'-'}</div>
+</div>
 </div>
 <div class="to-body">
 <div class="to-data-col">
@@ -581,6 +621,8 @@ body{font-family:'Tajawal',Arial,sans-serif;font-size:13px;margin:0;padding:0;co
 .to-hdr{text-align:center;font-size:22px;font-weight:900;letter-spacing:1px;border-bottom:2px solid #000;padding-bottom:3px;margin-bottom:5px;font-family:'Cairo','Tajawal',Arial,sans-serif}
 .to-sender-strip{display:flex;align-items:center;justify-content:center;gap:14px;background:#f3f4f6;border:2px solid #000;border-radius:6px;padding:6px 12px;margin-bottom:5px;direction:rtl}
 .ss-label{font-size:10.5px;font-weight:700;background:#000;color:#fff;padding:4px 12px;border-radius:4px;flex-shrink:0}
+.ss-block{display:flex;flex-direction:column;align-items:center;gap:1px}
+.ss-key{font-size:9px;font-weight:700;color:#666;line-height:1}
 .ss-name{font-weight:900;font-size:15px;line-height:1.2}
 .ss-sep{font-weight:700;color:#666;font-size:14px}
 .ss-phone{font-weight:700;font-size:14px;direction:ltr;letter-spacing:.5px}
