@@ -551,7 +551,7 @@ async function renderTP(orders){
         const dt=new Date(o.created_at).toLocaleDateString('ar-EG');
         const qrPayload=o.tracking_code;
         const qrImg=await makeQR(qrPayload);
-        const allowTxt=o.allow_open===false?'<span style="color:#b91c1c">✗ غير مسموح فتح الشحنة</span>':'<span style="color:#15803d">✓ مسموح بفتح الشحنة</span>';
+        const allowTxt=o.allow_open===false?'<span style="color:#b91c1c;font-weight:700">✗ غير مسموح فتح الشحنة</span>':'<span style="color:#15803d;font-weight:700">✓ مسموح بفتح الشحنة</span>';
         const piecesTxt=o.pieces_count||1;
         return `<div class="to">
 <div class="to-hdr">🚚 Buy On Line</div>
@@ -625,7 +625,7 @@ body{font-family:'Tajawal',Arial,sans-serif;font-size:13px;margin:0;padding:0;co
 .to-sender-strip{display:flex;align-items:center;justify-content:center;gap:14px;background:#f3f4f6;border:2px solid #000;border-radius:6px;padding:6px 12px;margin-bottom:5px;direction:rtl}
 .ss-label{font-size:10.5px;font-weight:700;background:#000;color:#fff;padding:4px 12px;border-radius:4px;flex-shrink:0}
 .ss-block{display:flex;flex-direction:column;align-items:center;gap:1px}
-.ss-key{font-size:9px;font-weight:700;color:#666;line-height:1}
+.ss-key{font-size:13px;font-weight:700;color:#000;line-height:1.2}
 .ss-name{font-weight:900;font-size:15px;line-height:1.2}
 .ss-sep{font-weight:700;color:#666;font-size:14px}
 .ss-phone{font-weight:700;font-size:14px;direction:ltr;letter-spacing:.5px}
