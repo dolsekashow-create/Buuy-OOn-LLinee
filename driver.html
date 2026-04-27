@@ -193,7 +193,26 @@ function getActiveOrders(){
     return myO.filter(o=>o.status!=='delivered'&&o.status!=='cancelled'&&o.status!=='returned'&&o.status!=='rejected');
 }
 
+// Arabic <-> English keyboard layout map (Egyptian/standard Arabic 101 layout)
+const arEnMap={'ذ':'`','ض':'q','ص':'w','ث':'e','ق':'r','ف':'t','غ':'y','ع':'u','ه':'i','خ':'o','ح':'p','ج':'[','د':']','ش':'a','س':'s','ي':'d','ب':'f','ل':'g','ا':'h','ت':'j','ن':'k','م':'l','ك':';','ط':"'",'ئ':'z','ء':'x','ؤ':'c','ر':'v','لا':'B','ى':'n','ة':'m','و':',','ز':'.','ظ':'/','أ':'H','إ':'Y','آ':'N','ـ':'J','،':'K','؛':'P','؟':'?'};
+function fixArabicLayout(s){
+    if(!s)return s;
+    s=s.replace(/لا/g,'B').replace(/لأ/g,'B').replace(/لإ/g,'B').replace(/لآ/g,'B');
+    let r='';
+    for(let i=0;i<s.length;i++){const c=s[i];r+=arEnMap[c]!==undefined?arEnMap[c]:c;}
+    return r;
+}
 function renderO(){
+    const inp=document.getElementById('dSearch');
+    if(inp&&inp.value){
+        const hasArabic=/[\u0600-\u06FF]/.test(inp.value);
+        if(hasArabic){
+            const fixed=fixArabicLayout(inp.value);
+            if(/^[A-Za-z0-9\-_]+$/.test(fixed.trim())){
+                inp.value=fixed.toUpperCase();
+            }
+        }
+    }
     const list=document.getElementById('ordersList');
     const s=(document.getElementById('dSearch')?.value||'').trim().toLowerCase();
     let filtered=myO;
