@@ -69,7 +69,7 @@
         .b-pending{background:#fef3c7;color:#b45309}.b-processing{background:#dbeafe;color:#1d4ed8}
         .b-shipped{background:#ede9fe;color:#6d28d9}.b-out_for_delivery{background:#ffedd5;color:#c2410c}
         .b-delivered{background:#dcfce7;color:#15803d}.b-cancelled{background:#fee2e2;color:#b91c1c}
-        .b-returned{background:#fce7f3;color:#be185d}.b-rejected{background:#fef2f2;color:#991b1b}
+        .b-returned{background:#fce7f3;color:#be185d}.b-rejected{background:#fef2f2;color:#991b1b}.b-postponed{background:#fef9c3;color:#854d0e}.b-returned_to_sender{background:#e0e7ff;color:#3730a3}
         #adminMap{width:100%;height:480px;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow)}
         .mov{display:none;position:fixed;inset:0;z-index:2000;background:rgba(26,39,68,.35);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px}
         .mov.show{display:flex}
@@ -172,7 +172,7 @@
 <!-- ORDERS -->
 <div class="page" id="page-orders">
 <div class="ph"><h1><i class="fas fa-box"></i> إدارة الطلبات</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="openM('addOM')"><i class="fas fa-plus"></i> إضافة طلب</button></div></div>
-<div class="tw"><div class="tt"><input type="text" placeholder="🔫 المسدس / بحث برقم التتبع، الموبايل، الاسم..." id="oSearch" oninput="filterO()" autofocus><select id="oFilter" onchange="filterO()"><option value="">كل الحالات</option><option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option></select></div>
+<div class="tw"><div class="tt"><input type="text" placeholder="🔫 المسدس / بحث برقم التتبع، الموبايل، الاسم..." id="oSearch" oninput="filterO()" autofocus><select id="oFilter" onchange="filterO()"><option value="">كل الحالات</option><option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option><option value="postponed">تأجيل</option><option value="returned_to_sender">تم ارتجاع للراسل</option></select></div>
 <div style="overflow-x:auto"><table><thead><tr><th class="cc"><input type="checkbox" id="selAll" onchange="togAll()"></th><th>رقم التتبع</th><th>المرسل</th><th>رقم المرسل</th><th>العميل</th><th>رقم العميل</th><th>رقم آخر</th><th>المحافظة</th><th>المنطقة</th><th>العنوان</th><th>الوصف</th><th>المبلغ</th><th>الحالة</th><th>المندوب</th><th>إجراءات</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div>
 </div>
 
@@ -283,7 +283,7 @@
 <div class="fg"><label>عدد القطع</label><input type="number" id="eoPieces" value="1" min="1"></div>
 <div class="fg"><label>إجمالي المبلغ</label><input type="number" id="eoAm"></div>
 <div class="fg"><label>الحالة</label><select id="eoSt">
-<option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option>
+<option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option><option value="postponed">تأجيل</option><option value="returned_to_sender">تم ارتجاع للراسل</option>
 </select></div>
 <div class="fg"><label>المندوب</label><select id="eoDrv"><option value="">-- بدون --</option></select></div>
 <div class="fg"><label>ملاحظات</label><textarea id="eoNt" rows="2"></textarea></div>
@@ -408,7 +408,7 @@ async function saveContact(){
 function chgPass(){const p=document.getElementById('newPass').value;if(!p||p.length<4)return toast('كلمة المرور قصيرة',1);localStorage.setItem(PASS_KEY,p);document.getElementById('newPass').value='';toast('تم تغيير كلمة المرور')}
 
 // ===== ORDERS =====
-const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',returned:'مرتجع',rejected:'مرفوض',cancelled:'ملغي'};
+const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',returned:'مرتجع',rejected:'مرفوض',cancelled:'ملغي',postponed:'تأجيل',returned_to_sender:'تم ارتجاع للراسل'};
 async function loadO(){if(!sb)return;const{data}=await sb.from('orders').select('*').order('created_at',{ascending:false});allO=data||[];renderO();upStats();renderRecent()}
 function renderO(){const s=(document.getElementById('oSearch')?.value||'').trim().toLowerCase(),f=document.getElementById('oFilter')?.value||'';let fl=allO.filter(o=>{const ms=!s||o.customer_phone?.includes(s)||o.customer_phone2?.includes(s)||o.sender_phone?.includes(s)||o.tracking_code?.toLowerCase().includes(s)||o.customer_name?.toLowerCase().includes(s)||o.sender_name?.toLowerCase().includes(s);const mf=!f||o.status===f;return ms&&mf});
 document.getElementById('ordersBody').innerHTML=fl.map(o=>{const dn=allD.find(d=>d.id===o.driver_id)?.name||'-';return`<tr><td class="cc"><input type="checkbox" class="oc" value="${o.id}" data-code="${o.tracking_code}"></td><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.sender_name||'-'}</td><td>${o.sender_phone||'-'}</td><td>${o.customer_name}</td><td>${o.customer_phone||'-'}</td><td>${o.customer_phone2||'-'}</td><td>${o.governorate||'-'}</td><td>${o.area||'-'}</td><td>${o.address||'-'}</td><td style="max-width:150px;white-space:normal">${o.description||'-'}</td><td>${o.amount||0} ج.م</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${dn}</td><td><button class="btn btn-sm btn-in" onclick="editO('${o.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-sc" onclick="copyO('${o.id}')" title="نسخ بيانات الطلب"><i class="fas fa-copy"></i> Copy</button> <button class="btn btn-sm btn-dg" onclick="delO('${o.id}')"><i class="fas fa-trash"></i></button></td></tr>`}).join('')}
@@ -551,7 +551,7 @@ async function renderTP(orders){
         const dt=new Date(o.created_at).toLocaleDateString('ar-EG');
         const qrPayload=o.tracking_code;
         const qrImg=await makeQR(qrPayload);
-        const allowTxt=o.allow_open===false?'<span style="color:#b91c1c;font-weight:700">✗ غير مسموح فتح الشحنة</span>':'<span style="color:#15803d;font-weight:700">✓ مسموح بفتح الشحنة</span>';
+        const allowTxt=o.allow_open===false?'<strong style="color:#b91c1c;font-weight:900">✗ غير مسموح فتح الشحنة</strong>':'<strong style="color:#15803d;font-weight:900">✓ مسموح بفتح الشحنة</strong>';
         const piecesTxt=o.pieces_count||1;
         return `<div class="to">
 <div class="to-hdr">🚚 Buy On Line</div>
