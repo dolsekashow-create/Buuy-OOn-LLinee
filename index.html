@@ -173,6 +173,7 @@
         <div class="hero-btns">
             <button class="btn btn-p" id="btnAddOrder"><i class="fas fa-plus-circle"></i> إضافة طلب</button>
             <button class="btn btn-o" id="btnQR"><i class="fas fa-qrcode"></i> إضافة عبر QR</button>
+            <button class="btn btn-o" id="btnExcelUpload"><i class="fas fa-file-excel"></i> رفع شيت Excel</button>
         </div>
     </div>
 </section>
@@ -284,12 +285,38 @@
     </div>
 </div>
 
+<!-- EXCEL UPLOAD MODAL -->
+<div class="mo-ov" id="excelModal">
+    <div class="modal">
+        <button class="mc" id="closeExcelModal">&times;</button>
+        <h2><i class="fas fa-file-excel"></i> رفع طلبات عبر Excel</h2>
+        <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:14px;margin-bottom:14px;color:#c2410c;font-size:.88rem;line-height:1.7">
+            <p style="font-weight:700;margin-bottom:6px"><i class="fas fa-info-circle"></i> تعليمات مهمة:</p>
+            <p>• حمّل القالب أولاً وعبّيه ببيانات الطلبات</p>
+            <p>• <strong>اسم الراسل ورقم الراسل مطلوبين</strong> (هما اللي بيحددوا التاجر)</p>
+            <p>• الحقول المطلوبة: اسم الراسل، رقم الراسل، اسم العميل، رقم العميل، المحافظة، العنوان</p>
+        </div>
+        <button class="btn btn-o" id="btnDownloadTemplate" style="width:100%;margin-bottom:12px"><i class="fas fa-download"></i> تحميل قالب Excel</button>
+        <div class="fg">
+            <label>اختر ملف Excel (.xlsx أو .csv)</label>
+            <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="padding:10px;border:1.5px dashed var(--border);border-radius:10px;background:var(--bg);width:100%;cursor:pointer">
+        </div>
+        <div id="excelPreview" style="display:none;margin:12px 0;padding:12px;background:var(--bg);border-radius:10px;border:1px solid var(--border);max-height:200px;overflow-y:auto;font-size:.85rem"></div>
+        <div class="mb">
+            <button class="btn btn-p" id="btnUploadExcel" style="flex:1"><i class="fas fa-cloud-upload-alt"></i> رفع الطلبات</button>
+            <button class="btn btn-o" id="cancelExcelModal">إلغاء</button>
+        </div>
+    </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- Load Supabase FIRST -->
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Load QR scanner -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<!-- Load SheetJS for Excel parsing -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <!-- App Logic -->
 <script>
@@ -510,6 +537,122 @@
             for (var i = 0; i < fields.length; i++) document.getElementById(fields[i]).value = '';
         } catch(e) {
             showToast('خطأ: ' + (e.message || e), true);
+        }
+    });
+
+    // ===== EXCEL UPLOAD =====
+    var parsedExcelRows = [];
+
+    document.getElementById('btnExcelUpload').addEventListener('click', function(){
+        openModal('excelModal');
+        document.getElementById('excelFile').value = '';
+        document.getElementById('excelPreview').style.display = 'none';
+        parsedExcelRows = [];
+    });
+    document.getElementById('closeExcelModal').addEventListener('click', function(){ closeModal('excelModal'); });
+    document.getElementById('cancelExcelModal').addEventListener('click', function(){ closeModal('excelModal'); });
+
+    document.getElementById('btnDownloadTemplate').addEventListener('click', function(){
+        if (typeof XLSX === 'undefined') return showToast('مكتبة Excel لم تحمل بعد', true);
+        var headers = ['اسم الراسل','رقم الراسل','اسم العميل','رقم العميل','رقم آخر','المحافظة','المنطقة','العنوان','محتوى الشحنة','إمكانية الفتح','عدد القطع','المبلغ'];
+        var sample = ['محمد أحمد','01012345678','علي محمود','01098765432','','القاهرة','مدينة نصر','شارع 10 - عمارة 5','ملابس','مسموح',1,350];
+        var wb = XLSX.utils.book_new();
+        var ws = XLSX.utils.aoa_to_sheet([headers, sample]);
+        ws['!cols'] = headers.map(function(){ return { wch: 18 }; });
+        ws['!views'] = [{ RTL: true }];
+        XLSX.utils.book_append_sheet(wb, ws, 'الطلبات');
+        XLSX.writeFile(wb, 'قالب_رفع_الطلبات.xlsx');
+        showToast('تم تحميل القالب');
+    });
+
+    document.getElementById('excelFile').addEventListener('change', function(e){
+        var file = e.target.files[0];
+        if (!file) return;
+        if (typeof XLSX === 'undefined') return showToast('مكتبة Excel لم تحمل بعد', true);
+        var reader = new FileReader();
+        reader.onload = function(evt){
+            try {
+                var data = new Uint8Array(evt.target.result);
+                var wb = XLSX.read(data, { type: 'array' });
+                var ws = wb.Sheets[wb.SheetNames[0]];
+                var rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+                if (!rows || rows.length === 0) { showToast('الملف فارغ', true); return; }
+                parsedExcelRows = rows;
+                var prev = document.getElementById('excelPreview');
+                prev.style.display = 'block';
+                prev.innerHTML = '<p style="font-weight:700;color:var(--success);margin-bottom:8px"><i class="fas fa-check-circle"></i> تم قراءة ' + rows.length + ' طلب</p><p style="color:var(--text-l);font-size:.82rem">اضغط "رفع الطلبات" للتأكيد</p>';
+            } catch(err) {
+                showToast('خطأ في قراءة الملف: ' + err.message, true);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById('btnUploadExcel').addEventListener('click', async function(){
+        if (!parsedExcelRows || parsedExcelRows.length === 0) return showToast('اختر ملف Excel أولاً', true);
+        if (!sb) return showToast('لا يوجد اتصال بقاعدة البيانات', true);
+
+        function pick(row, keys) {
+            for (var i = 0; i < keys.length; i++) {
+                if (row[keys[i]] !== undefined && row[keys[i]] !== null && String(row[keys[i]]).trim() !== '') {
+                    return String(row[keys[i]]).trim();
+                }
+            }
+            return '';
+        }
+
+        var orders = [];
+        var errors = [];
+        for (var i = 0; i < parsedExcelRows.length; i++) {
+            var r = parsedExcelRows[i];
+            var senderName = pick(r, ['اسم الراسل','sender_name','Sender Name']);
+            var senderPhone = pick(r, ['رقم الراسل','sender_phone','Sender Phone']);
+            var custName = pick(r, ['اسم العميل','customer_name','Customer Name']);
+            var custPhone = pick(r, ['رقم العميل','customer_phone','Customer Phone']);
+            var custPhone2 = pick(r, ['رقم آخر','رقم اخر','customer_phone2']);
+            var gov = pick(r, ['المحافظة','governorate','Governorate']);
+            var area = pick(r, ['المنطقة','area','Area']);
+            var addr = pick(r, ['العنوان','address','Address']);
+            var desc = pick(r, ['محتوى الشحنة','الوصف','description']);
+            var allowRaw = pick(r, ['إمكانية الفتح','الفتح','allow_open']);
+            var pieces = parseInt(pick(r, ['عدد القطع','pieces_count','Pieces'])) || 1;
+            var amount = parseFloat(pick(r, ['المبلغ','amount','Amount'])) || 0;
+
+            if (!senderName || !senderPhone) { errors.push('السطر ' + (i+2) + ': اسم/رقم الراسل مطلوب'); continue; }
+            if (!custName || !custPhone || !gov || !addr) { errors.push('السطر ' + (i+2) + ': بيانات العميل/المحافظة/العنوان ناقصة'); continue; }
+
+            var allow = !(allowRaw === 'غير مسموح' || allowRaw === 'no' || allowRaw === 'لا' || allowRaw === false);
+
+            orders.push({
+                tracking_code: genCode(),
+                customer_name: custName, sender_name: senderName, sender_phone: senderPhone,
+                customer_phone: custPhone, customer_phone2: custPhone2,
+                address: addr, area: area, governorate: gov, description: desc,
+                amount: amount, allow_open: allow, pieces_count: pieces,
+                status: 'pending', source: 'excel_upload'
+            });
+        }
+
+        if (orders.length === 0) { showToast('لا توجد طلبات صحيحة. ' + (errors[0] || ''), true); return; }
+
+        var btn = document.getElementById('btnUploadExcel');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الرفع...';
+
+        try {
+            var res = await sb.from('orders').insert(orders);
+            if (res.error) throw res.error;
+            var msg = 'تم رفع ' + orders.length + ' طلب بنجاح';
+            if (errors.length > 0) msg += ' (تم تخطي ' + errors.length + ' سطر)';
+            showToast(msg);
+            closeModal('excelModal');
+            parsedExcelRows = [];
+            document.getElementById('excelFile').value = '';
+        } catch(e) {
+            showToast('خطأ في الرفع: ' + (e.message || e), true);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> رفع الطلبات';
         }
     });
 
