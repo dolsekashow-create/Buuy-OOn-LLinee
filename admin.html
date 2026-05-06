@@ -588,7 +588,7 @@ async function renderTP(orders){
         const dt=new Date(o.created_at).toLocaleDateString('ar-EG');
         const qrPayload=o.tracking_code;
         const qrImg=await makeQR(qrPayload);
-        const allowTxt=o.allow_open===false?'<strong style="color:#b91c1c;font-weight:900">✗ غير مسموح فتح الشحنة</strong>':'<strong style="color:#15803d;font-weight:900">✓ مسموح بفتح الشحنة</strong>';
+        const allowTxt=o.allow_open===false?'<strong class="allow-tag" style="color:#b91c1c">✗ غير مسموح فتح الشحنة</strong>':'<strong class="allow-tag" style="color:#15803d">✓ مسموح بفتح الشحنة</strong>';
         const piecesTxt=o.pieces_count||1;
         return `<div class="to">
 <div class="to-hdr">🚚 Buy On Line</div>
@@ -670,6 +670,7 @@ body{font-family:'Tajawal',Arial,sans-serif;font-size:13px;margin:0;padding:0;co
 .to-data-col{flex:1;display:flex;flex-direction:column;gap:1px;font-size:13px;padding:0 4px}
 .to-data-col p{margin:1.5px 0;line-height:1.35}
 .to-data-col strong{font-weight:700}
+.to-data-col strong.allow-tag{font-weight:900;font-size:14.5px}
 .to-qr-col{width:30mm;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-right:1px dashed #999;padding-right:4px}
 .to-qr img{width:24mm;height:24mm;display:block}
 .to-qr-na{font-size:10px;color:#999;text-align:center;padding:8mm 0}
