@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root{--navy:#1a2744;--orange:#f47920;--orange-d:#d4631a;--bg:#f3f5f9;--card:#fff;--text:#1a2744;--text-l:#5a6a80;--text-m:#8d9bb0;--border:#e2e7ef;--success:#16a34a;--danger:#dc2626;--warning:#f59e0b;--info:#3b82f6;--shadow:0 4px 20px rgba(26,39,68,.07);--shadow-lg:0 10px 36px rgba(26,39,68,.1);--sidebar-w:250px}
         *{margin:0;padding:0;box-sizing:border-box}
@@ -171,7 +172,7 @@
 
 <!-- ORDERS -->
 <div class="page" id="page-orders">
-<div class="ph"><h1><i class="fas fa-box"></i> إدارة الطلبات</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="openM('addOM')"><i class="fas fa-plus"></i> إضافة طلب</button></div></div>
+<div class="ph"><h1><i class="fas fa-box"></i> إدارة الطلبات</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="openM('addOM')"><i class="fas fa-plus"></i> إضافة طلب</button><button class="btn btn-sc" onclick="exportAllOrders()"><i class="fas fa-file-excel"></i> تصدير الكل</button><button class="btn btn-in" onclick="exportSelectedOrders()"><i class="fas fa-check-square"></i> تصدير المحدد</button><button class="btn btn-o" onclick="openM('exportMerchantM')"><i class="fas fa-user-tag"></i> تصدير حسب التاجر</button></div></div>
 <div class="tw"><div class="tt"><input type="text" placeholder="🔫 المسدس / بحث برقم التتبع، الموبايل، الاسم..." id="oSearch" oninput="filterO()" autofocus><select id="oFilter" onchange="filterO()"><option value="">كل الحالات</option><option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option><option value="postponed">تأجيل</option><option value="returned_to_sender">تم ارتجاع للراسل</option></select></div>
 <div style="overflow-x:auto"><table><thead><tr><th class="cc"><input type="checkbox" id="selAll" onchange="togAll()"></th><th>رقم التتبع</th><th>المرسل</th><th>رقم المرسل</th><th>العميل</th><th>رقم العميل</th><th>رقم آخر</th><th>المحافظة</th><th>المنطقة</th><th>العنوان</th><th>الوصف</th><th>المبلغ</th><th>الحالة</th><th>المندوب</th><th>إجراءات</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div>
 </div>
@@ -292,6 +293,13 @@
 <div class="mov" id="drvM"><div class="mdl"><button class="mc" onclick="closeM('drvM')">&times;</button><h2 id="dmTitle"><i class="fas fa-user-plus"></i> إضافة مندوب</h2><input type="hidden" id="dmId"><div class="fg"><label>الاسم</label><input id="dmN"></div><div class="fg"><label>الهاتف</label><input id="dmP"></div><div class="fg"><label>رقم اللوحة</label><input id="dmPl"></div><div class="fg"><label>كود الدخول (فريد)</label><input id="dmC"></div><div class="mbtns"><button class="btn btn-p" onclick="saveDrv()" style="flex:1"><i class="fas fa-save"></i> حفظ</button><button class="btn btn-o" onclick="closeM('drvM')">إلغاء</button></div></div></div>
 
 <div class="mov" id="aqrM" style="display:none"></div>
+
+<!-- EXPORT BY MERCHANT MODAL -->
+<div class="mov" id="exportMerchantM"><div class="mdl"><button class="mc" onclick="closeM('exportMerchantM')">&times;</button><h2><i class="fas fa-user-tag"></i> تصدير طلبات تاجر</h2>
+<p style="color:var(--text-l);font-size:.9rem;margin-bottom:14px">اختر التاجر من القائمة لتصدير كل طلباته</p>
+<div class="fg"><label>التاجر (الراسل)</label><select id="merchantSelect" style="padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:'Tajawal';width:100%;outline:none;font-size:.95rem"><option value="">-- اختر التاجر --</option></select></div>
+<div id="merchantStats" style="display:none;background:var(--bg);border-radius:10px;padding:12px;margin-bottom:14px;font-size:.88rem;color:var(--text-l)"></div>
+<div class="mbtns"><button class="btn btn-p" onclick="exportByMerchant()" style="flex:1"><i class="fas fa-file-excel"></i> تصدير Excel</button><button class="btn btn-o" onclick="closeM('exportMerchantM')">إلغاء</button></div></div></div>
 
 <div class="toast" id="toast"></div>
 
@@ -654,9 +662,116 @@ function openAQR(){toast('استخدم خانة البحث في الأعلى م�
 function closeAQR(){closeM('aqrM')}
 
 // ===== UTILS =====
-function openM(id){document.getElementById(id).classList.add('show');if(id==='addOM')populateAddDriverDD()}
+function openM(id){document.getElementById(id).classList.add('show');if(id==='addOM')populateAddDriverDD();if(id==='exportMerchantM')populateMerchantDD()}
 function closeM(id){document.getElementById(id).classList.remove('show')}
 function toast(m,err){const t=document.getElementById('toast');t.textContent=m;t.className='toast show'+(err?' err':'');setTimeout(()=>t.classList.remove('show'),3500)}
+
+// ===== EXCEL EXPORT =====
+function ordersToSheetData(orders){
+    const headers=['رقم التتبع','اسم الراسل','رقم الراسل','اسم العميل','رقم العميل','رقم آخر','المحافظة','المنطقة','العنوان','محتوى الشحنة','عدد القطع','إمكانية الفتح','المبلغ','الحالة','المندوب','المصدر','ملاحظات','التاريخ'];
+    const rows=orders.map(o=>{
+        const drvName=allD.find(d=>d.id===o.driver_id)?.name||'';
+        return[
+            o.tracking_code||'',
+            o.sender_name||'',
+            o.sender_phone||'',
+            o.customer_name||'',
+            o.customer_phone||'',
+            o.customer_phone2||'',
+            o.governorate||'',
+            o.area||'',
+            o.address||'',
+            o.description||'',
+            o.pieces_count||1,
+            o.allow_open===false?'غير مسموح':'مسموح',
+            o.amount||0,
+            stMap[o.status]||o.status||'',
+            drvName,
+            o.source||'',
+            o.notes||'',
+            o.created_at?new Date(o.created_at).toLocaleString('ar-EG'):''
+        ];
+    });
+    return[headers,...rows];
+}
+
+function downloadExcel(orders,filename){
+    if(typeof XLSX==='undefined')return toast('مكتبة Excel لم تحمل بعد',1);
+    if(!orders||orders.length===0)return toast('لا توجد طلبات للتصدير',1);
+    const data=ordersToSheetData(orders);
+    const wb=XLSX.utils.book_new();
+    const ws=XLSX.utils.aoa_to_sheet(data);
+    // Column widths
+    ws['!cols']=[{wch:20},{wch:18},{wch:14},{wch:18},{wch:14},{wch:14},{wch:14},{wch:14},{wch:28},{wch:20},{wch:10},{wch:12},{wch:10},{wch:14},{wch:14},{wch:12},{wch:18},{wch:18}];
+    ws['!views']=[{RTL:true}];
+    XLSX.utils.book_append_sheet(wb,ws,'الطلبات');
+    XLSX.writeFile(wb,filename);
+    toast('تم تصدير '+orders.length+' طلب');
+}
+
+function exportAllOrders(){
+    // Respect current filters on the orders page
+    const s=(document.getElementById('oSearch')?.value||'').trim().toLowerCase();
+    const f=document.getElementById('oFilter')?.value||'';
+    let list=allO;
+    if(s||f){
+        list=allO.filter(o=>{
+            const ms=!s||o.customer_phone?.includes(s)||o.customer_phone2?.includes(s)||o.sender_phone?.includes(s)||o.tracking_code?.toLowerCase().includes(s)||o.customer_name?.toLowerCase().includes(s)||o.sender_name?.toLowerCase().includes(s);
+            const mf=!f||o.status===f;
+            return ms&&mf;
+        });
+    }
+    const today=new Date().toISOString().slice(0,10);
+    const suffix=(s||f)?'_مفلترة':'_الكل';
+    downloadExcel(list,'الطلبات'+suffix+'_'+today+'.xlsx');
+}
+
+function exportSelectedOrders(){
+    const checked=document.querySelectorAll('.oc:checked');
+    if(checked.length===0)return toast('حدد طلبات أولاً من الجدول',1);
+    const ids=Array.from(checked).map(c=>c.value);
+    const list=allO.filter(o=>ids.includes(String(o.id)));
+    const today=new Date().toISOString().slice(0,10);
+    downloadExcel(list,'الطلبات_المحددة_'+today+'.xlsx');
+}
+
+function populateMerchantDD(){
+    // Group by sender_phone (primary key for merchant identity)
+    const map={};
+    allO.forEach(o=>{
+        if(!o.sender_phone)return;
+        const key=o.sender_phone;
+        if(!map[key]){map[key]={name:o.sender_name||'-',phone:o.sender_phone,count:0};}
+        map[key].count++;
+    });
+    const merchants=Object.values(map).sort((a,b)=>b.count-a.count);
+    const dd=document.getElementById('merchantSelect');
+    dd.innerHTML='<option value="">-- اختر التاجر --</option>'+merchants.map(m=>`<option value="${m.phone}">${m.name} - ${m.phone} (${m.count} طلب)</option>`).join('');
+    document.getElementById('merchantStats').style.display='none';
+    // Show stats on selection
+    dd.onchange=function(){
+        const phone=dd.value;
+        const stats=document.getElementById('merchantStats');
+        if(!phone){stats.style.display='none';return;}
+        const list=allO.filter(o=>o.sender_phone===phone);
+        const delivered=list.filter(o=>o.status==='delivered').length;
+        const pending=list.filter(o=>o.status==='pending'||o.status==='processing').length;
+        const totalAmount=list.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.amount||0),0);
+        stats.style.display='block';
+        stats.innerHTML='<strong>إجمالي الطلبات:</strong> '+list.length+' | <strong>تم التسليم:</strong> '+delivered+' | <strong>قيد التنفيذ:</strong> '+pending+'<br><strong>إجمالي التحصيل (المسلّم):</strong> '+totalAmount.toLocaleString()+' ج.م';
+    };
+}
+
+function exportByMerchant(){
+    const phone=document.getElementById('merchantSelect').value;
+    if(!phone)return toast('اختر التاجر أولاً',1);
+    const list=allO.filter(o=>o.sender_phone===phone);
+    if(list.length===0)return toast('لا توجد طلبات لهذا التاجر',1);
+    const merchantName=(list[0].sender_name||'تاجر').replace(/[\\/:*?"<>|]/g,'_');
+    const today=new Date().toISOString().slice(0,10);
+    downloadExcel(list,'طلبات_'+merchantName+'_'+today+'.xlsx');
+    closeM('exportMerchantM');
+}
 </script>
 </body>
 </html>
