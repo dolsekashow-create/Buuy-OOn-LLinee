@@ -72,7 +72,26 @@
         .b-pending{background:#fef3c7;color:#b45309}.b-processing{background:#dbeafe;color:#1d4ed8}
         .b-shipped{background:#ede9fe;color:#6d28d9}.b-out_for_delivery{background:#ffedd5;color:#c2410c}
         .b-delivered{background:#dcfce7;color:#15803d}.b-returned{background:#fce7f3;color:#be185d}
-        .b-rejected{background:#fef2f2;color:#991b1b}.b-cancelled{background:#fee2e2;color:#b91c1c}.b-postponed{background:#e0e7ff;color:#3730a3}
+        .b-rejected{background:#fef2f2;color:#991b1b}.b-cancelled{background:#fee2e2;color:#b91c1c}.b-postponed{background:#e0e7ff;color:#3730a3}.b-partial_delivered{background:#fef3c7;color:#a16207;border:1px solid #fbbf24}
+        .b-supplied{background:#d1fae5;color:#065f46}
+        /* Partial delivery modal */
+        .pdov{position:fixed;inset:0;background:rgba(26,39,68,.65);display:none;align-items:center;justify-content:center;z-index:9998;padding:16px}
+        .pdov.show{display:flex;animation:fadeIn .25s}
+        .pdmd{background:var(--card);border-radius:18px;padding:20px;max-width:420px;width:100%;box-shadow:var(--shadow-lg);position:relative;max-height:90vh;overflow-y:auto}
+        .pdmd h3{font-family:'Cairo';font-size:1.05rem;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--text)}
+        .pdmd h3 i{color:#f59e0b}
+        .pdmd .pdc{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:14px;font-size:.85rem;color:#9a3412}
+        .pdmd .pdc strong{font-size:1.15rem;color:#c2410c}
+        .pdmd .fg{margin-bottom:12px}
+        .pdmd label{display:block;font-size:.85rem;font-weight:700;margin-bottom:6px;color:var(--text)}
+        .pdmd input,.pdmd textarea{width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:'Tajawal';font-size:.95rem;outline:none}
+        .pdmd input:focus,.pdmd textarea:focus{border-color:var(--orange)}
+        .pdmd textarea{resize:vertical;min-height:60px}
+        .pdmd .pdwarn{color:var(--danger);font-size:.78rem;margin-top:4px;display:none}
+        .pdmd .pdwarn.show{display:block}
+        .pdmd .pdbtns{display:flex;gap:8px;margin-top:14px}
+        .pdmd .pdbtns .btn{flex:1}
+        .pdmd .pdclose{position:absolute;top:10px;left:10px;background:none;border:none;font-size:1.4rem;color:var(--text-l);cursor:pointer}
         .od{display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;font-size:.86rem}
         .od i{color:var(--orange);width:16px;margin-top:2px;font-size:.78rem}
         .od span{color:var(--text-l)}
@@ -142,6 +161,30 @@
     <div class="af"><a href="https://zero-nine-rose.vercel.app/" target="_blank" class="fb"><span>تم الإنشاء والتطوير من</span><img src="zn-logo.png" alt="Zero-Nine"><strong style="color:var(--orange)">Zero-Nine</strong></a></div>
 </div>
 
+<!-- PARTIAL DELIVERY MODAL -->
+<div class="pdov" id="partialModal">
+    <div class="pdmd">
+        <button class="pdclose" onclick="closePartial()">&times;</button>
+        <h3><i class="fas fa-balance-scale"></i> تسليم جزئي</h3>
+        <div class="pdc" id="pdInfo">
+            المبلغ الأصلي: <strong id="pdOrig">0</strong> ج.م
+        </div>
+        <div class="fg">
+            <label>المبلغ المحصّل فعلاً (ج.م) *</label>
+            <input type="number" id="pdAmount" min="0" step="0.01" placeholder="مثلاً: 500">
+            <div class="pdwarn" id="pdWarn">المبلغ المحصّل لازم يكون أقل من المبلغ الأصلي</div>
+        </div>
+        <div class="fg">
+            <label>الملاحظة / السبب *</label>
+            <textarea id="pdNote" placeholder="مثلاً: العميل رفض قطعة، أعاد قطعة..."></textarea>
+        </div>
+        <div class="pdbtns">
+            <button class="btn btn-sm btn-sc" onclick="confirmPartial()" style="background:#f59e0b"><i class="fas fa-check"></i> تأكيد</button>
+            <button class="btn btn-sm btn-pink" onclick="closePartial()" style="background:var(--text-l)">إلغاء</button>
+        </div>
+    </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -151,7 +194,7 @@ let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn(
 
 let drv=null,myO=[],gpsW=null,gpsOn=false,myLat=null,myLng=null,dMap=null,myMk=null,cLat=29.851,cLng=31.2765;
 let currentDestIndex=0; // Track which destination we're on
-const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',returned:'مرتجع',rejected:'مرفوض',cancelled:'ملغي',postponed:'مؤجل'};
+const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',partial_delivered:'تسليم جزئي',supplied:'تم التوريد',returned:'مرتجع',rejected:'مرفوض',cancelled:'ملغي',postponed:'مؤجل'};
 
 // ===== LOGIN =====
 document.getElementById('loginBtn').addEventListener('click',doLogin);
@@ -229,8 +272,8 @@ function renderO(){
     }
     if(!myO.length){list.innerHTML='<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد طلبات حالياً</p></div>';return}
     if(s&&!filtered.length){list.innerHTML='<div class="empty"><i class="fas fa-search"></i><p>لا توجد نتائج للبحث: '+s+'</p></div>';return}
-    const act=filtered.filter(o=>o.status!=='delivered'&&o.status!=='cancelled'&&o.status!=='returned'&&o.status!=='rejected'&&o.status!=='postponed');
-    const done=filtered.filter(o=>o.status==='delivered');
+    const act=filtered.filter(o=>o.status!=='delivered'&&o.status!=='partial_delivered'&&o.status!=='cancelled'&&o.status!=='returned'&&o.status!=='rejected'&&o.status!=='postponed'&&o.status!=='supplied');
+    const done=filtered.filter(o=>o.status==='delivered'||o.status==='partial_delivered'||o.status==='supplied');
     const returned=filtered.filter(o=>o.status==='returned'||o.status==='rejected'||o.status==='cancelled');
     const postponed=filtered.filter(o=>o.status==='postponed');
     let h='';
@@ -256,13 +299,14 @@ function oCard(o,showA,isCurrent){
     <div class="od"><i class="fas fa-phone"></i><span>${o.customer_phone||'-'}</span></div>
     <div class="od"><i class="fas fa-map-marker-alt"></i><span>${o.address||'-'}</span></div>
     <div class="od"><i class="fas fa-map-pin"></i><span>${o.area||'-'}</span></div>
-    <div class="od"><i class="fas fa-money-bill"></i><span>${o.amount||0} ج.م</span></div>
+    <div class="od"><i class="fas fa-money-bill"></i><span>${o.status==='partial_delivered'&&o.collected_amount!=null?`<strong style="color:#a16207">${o.collected_amount} ج.م</strong> <span style="color:var(--text-m);text-decoration:line-through;font-size:.78rem">${o.amount||0} ج.م</span> <span style="background:#fef3c7;color:#a16207;padding:1px 6px;border-radius:6px;font-size:.7rem;font-weight:700">جزئي</span>`:`${o.amount||0} ج.م`}</span></div>
     ${o.description?`<div class="od"><i class="fas fa-clipboard"></i><span>${o.description}</span></div>`:''}
     ${o.notes?`<div class="note-saved"><i class="fas fa-sticky-note"></i> ملاحظة: ${o.notes}</div>`:''}
     ${showA?`<div class="oa">
     ${o.status==='pending'||o.status==='processing'?`<button class="btn btn-sm btn-p" onclick="upSt('${o.id}','shipped')"><i class="fas fa-truck"></i> شحن</button>`:''}
     ${o.status==='shipped'?`<button class="btn btn-sm btn-p" onclick="upSt('${o.id}','out_for_delivery')"><i class="fas fa-motorcycle"></i> في الطريق</button>`:''}
     ${o.status==='out_for_delivery'?`<button class="btn btn-sm btn-sc" onclick="upSt('${o.id}','delivered')"><i class="fas fa-check"></i> تم التسليم</button>`:''}
+    ${o.status==='out_for_delivery'?`<button class="btn btn-sm btn-wr" onclick="openPartial('${o.id}')" style="background:#f59e0b"><i class="fas fa-balance-scale"></i> تسليم جزئي</button>`:''}
     <button class="btn btn-sm btn-pink" onclick="upSt('${o.id}','returned')"><i class="fas fa-undo"></i> مرتجع</button>
     <button class="btn btn-sm btn-dg" onclick="upSt('${o.id}','cancelled')"><i class="fas fa-times"></i> إلغاء</button>
     <button class="btn btn-sm btn-wr" onclick="upSt('${o.id}','postponed')"><i class="fas fa-clock"></i> تأجيل</button>
@@ -352,6 +396,62 @@ myMk=L.marker([lat,lng],{icon:di}).addTo(dMap).bindPopup('أنت هنا')}
 setInterval(()=>{if(gpsOn&&drv&&myLat&&myLng&&sb)sb.from('drivers').update({lat:myLat,lng:myLng,last_seen:new Date().toISOString()}).eq('id',drv.id).catch(()=>{})},30000);
 
 function toast(m,err){const t=document.getElementById('toast');t.textContent=m;t.className='toast show'+(err?' err':'');setTimeout(()=>t.classList.remove('show'),3500)}
+
+// ===== PARTIAL DELIVERY =====
+let pdCurrentId=null;
+function openPartial(id){
+    const o=myO.find(x=>x.id==id);
+    if(!o)return;
+    pdCurrentId=id;
+    document.getElementById('pdOrig').textContent=(o.amount||0)+' ج.م';
+    document.getElementById('pdAmount').value='';
+    document.getElementById('pdAmount').max=Math.max(0,(o.amount||0)-0.01);
+    document.getElementById('pdNote').value='';
+    document.getElementById('pdWarn').classList.remove('show');
+    document.getElementById('partialModal').classList.add('show');
+    setTimeout(()=>document.getElementById('pdAmount').focus(),100);
+}
+function closePartial(){
+    document.getElementById('partialModal').classList.remove('show');
+    pdCurrentId=null;
+}
+async function confirmPartial(){
+    if(!pdCurrentId)return;
+    const o=myO.find(x=>x.id==pdCurrentId);
+    if(!o)return;
+    const orig=parseFloat(o.amount||0);
+    const amtRaw=document.getElementById('pdAmount').value.trim();
+    const note=document.getElementById('pdNote').value.trim();
+    const warn=document.getElementById('pdWarn');
+
+    if(amtRaw===''){warn.textContent='ادخل المبلغ المحصّل';warn.classList.add('show');return}
+    const amt=parseFloat(amtRaw);
+    if(isNaN(amt)||amt<0){warn.textContent='المبلغ غير صحيح';warn.classList.add('show');return}
+    if(amt>=orig){warn.textContent='المبلغ المحصّل لازم يكون أقل من المبلغ الأصلي ('+orig+')';warn.classList.add('show');return}
+    if(!note){warn.textContent='الملاحظة مطلوبة لتسجيل سبب التسليم الجزئي';warn.classList.add('show');return}
+    warn.classList.remove('show');
+
+    if(!sb)return toast('لا يوجد اتصال',1);
+    const existingNote=(o.notes||'').trim();
+    const stamp=new Date().toLocaleString('ar-EG');
+    const partialNote='[تسليم جزئي '+stamp+'] حُصّل '+amt+' من أصل '+orig+' ج.م — '+note;
+    const finalNote=existingNote?existingNote+'\n'+partialNote:partialNote;
+
+    try{
+        const res=await sb.from('orders').update({
+            status:'partial_delivered',
+            collected_amount:amt,
+            partial_reason:note,
+            notes:finalNote
+        }).eq('id',pdCurrentId);
+        if(res.error)throw res.error;
+        toast('تم تسجيل التسليم الجزئي');
+        closePartial();
+        loadMyO();
+    }catch(e){
+        toast('خطأ: '+(e.message||e),1);
+    }
+}
 </script>
 </body>
 </html>
