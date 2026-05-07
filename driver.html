@@ -72,7 +72,7 @@
         .b-pending{background:#fef3c7;color:#b45309}.b-processing{background:#dbeafe;color:#1d4ed8}
         .b-shipped{background:#ede9fe;color:#6d28d9}.b-out_for_delivery{background:#ffedd5;color:#c2410c}
         .b-delivered{background:#dcfce7;color:#15803d}.b-returned{background:#fce7f3;color:#be185d}
-        .b-rejected{background:#fef2f2;color:#991b1b}.b-cancelled{background:#fee2e2;color:#b91c1c}.b-postponed{background:#e0e7ff;color:#3730a3}.b-partial_delivered{background:#fef3c7;color:#a16207;border:1px solid #fbbf24}
+        .b-rejected{background:#fef2f2;color:#991b1b}.b-cancelled{background:#fee2e2;color:#b91c1c}.b-postponed{background:#e0e7ff;color:#3730a3}.b-no_answer{background:#ede9fe;color:#6d28d9}.b-partial_delivered{background:#fef3c7;color:#a16207;border:1px solid #fbbf24}
         .b-supplied{background:#d1fae5;color:#065f46}
         /* Partial delivery modal */
         .pdov{position:fixed;inset:0;background:rgba(26,39,68,.65);display:none;align-items:center;justify-content:center;z-index:9998;padding:16px}
@@ -194,7 +194,7 @@ let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn(
 
 let drv=null,myO=[],gpsW=null,gpsOn=false,myLat=null,myLng=null,dMap=null,myMk=null,cLat=29.851,cLng=31.2765;
 let currentDestIndex=0; // Track which destination we're on
-const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',partial_delivered:'تسليم جزئي',supplied:'تم التوريد',returned:'مرتجع',rejected:'مرفوض',cancelled:'ملغي',postponed:'مؤجل'};
+const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',partial_delivered:'تسليم جزئي',supplied:'تم التوريد',returned:'مرتجع',rejected:'مرفوض',cancelled:'ملغي',postponed:'مؤجل',no_answer:'عدم الرد'};
 
 // ===== LOGIN =====
 document.getElementById('loginBtn').addEventListener('click',doLogin);
@@ -233,7 +233,7 @@ async function loadMyO(){
 }
 
 function getActiveOrders(){
-    return myO.filter(o=>o.status!=='delivered'&&o.status!=='cancelled'&&o.status!=='returned'&&o.status!=='rejected'&&o.status!=='postponed');
+    return myO.filter(o=>o.status!=='delivered'&&o.status!=='cancelled'&&o.status!=='returned'&&o.status!=='rejected'&&o.status!=='postponed'&&o.status!=='no_answer');
 }
 
 // Arabic <-> English keyboard layout map (Egyptian/standard Arabic 101 layout)
@@ -272,13 +272,15 @@ function renderO(){
     }
     if(!myO.length){list.innerHTML='<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد طلبات حالياً</p></div>';return}
     if(s&&!filtered.length){list.innerHTML='<div class="empty"><i class="fas fa-search"></i><p>لا توجد نتائج للبحث: '+s+'</p></div>';return}
-    const act=filtered.filter(o=>o.status!=='delivered'&&o.status!=='partial_delivered'&&o.status!=='cancelled'&&o.status!=='returned'&&o.status!=='rejected'&&o.status!=='postponed'&&o.status!=='supplied');
+    const act=filtered.filter(o=>o.status!=='delivered'&&o.status!=='partial_delivered'&&o.status!=='cancelled'&&o.status!=='returned'&&o.status!=='rejected'&&o.status!=='postponed'&&o.status!=='no_answer'&&o.status!=='supplied');
     const done=filtered.filter(o=>o.status==='delivered'||o.status==='partial_delivered'||o.status==='supplied');
     const returned=filtered.filter(o=>o.status==='returned'||o.status==='rejected'||o.status==='cancelled');
     const postponed=filtered.filter(o=>o.status==='postponed');
+    const noAnswer=filtered.filter(o=>o.status==='no_answer');
     let h='';
     const sortedAct=sortByDistance(act);
     sortedAct.forEach((o,i)=>{h+=oCard(o,true,i===currentDestIndex&&!s)});
+    if(noAnswer.length){h+=`<h3 style="margin:18px 0 10px;font-size:.9rem;color:#6d28d9"><i class="fas fa-phone-slash"></i> عدم الرد</h3>`;noAnswer.forEach(o=>{h+=oCard(o,true,false)})}
     if(postponed.length){h+=`<h3 style="margin:18px 0 10px;font-size:.9rem;color:#3730a3"><i class="fas fa-clock"></i> مؤجل</h3>`;postponed.forEach(o=>{h+=oCard(o,true,false)})}
     if(returned.length){h+=`<h3 style="margin:18px 0 10px;font-size:.9rem;color:#be185d"><i class="fas fa-undo"></i> مرتجع/ملغي</h3>`;returned.forEach(o=>{h+=oCard(o,false,false)})}
     if(done.length){h+=`<h3 style="margin:18px 0 10px;font-size:.9rem;color:var(--success)"><i class="fas fa-check-circle"></i> مسلّمة</h3>`;done.forEach(o=>{h+=oCard(o,false,false)})}
@@ -310,6 +312,7 @@ function oCard(o,showA,isCurrent){
     <button class="btn btn-sm btn-pink" onclick="upSt('${o.id}','returned')"><i class="fas fa-undo"></i> مرتجع</button>
     <button class="btn btn-sm btn-dg" onclick="upSt('${o.id}','cancelled')"><i class="fas fa-times"></i> إلغاء</button>
     <button class="btn btn-sm btn-wr" onclick="upSt('${o.id}','postponed')"><i class="fas fa-clock"></i> تأجيل</button>
+    <button class="btn btn-sm" onclick="upSt('${o.id}','no_answer')" style="background:#7c3aed;color:#fff"><i class="fas fa-phone-slash"></i> عدم الرد</button>
     <a href="tel:${o.customer_phone}" class="btn btn-sm btn-o"><i class="fas fa-phone"></i></a>
     ${o.customer_phone?`<a href="https://wa.me/2${o.customer_phone}" target="_blank" class="btn btn-sm btn-sc" style="background:#25D366"><i class="fab fa-whatsapp"></i></a>`:''}
     </div>
@@ -320,7 +323,7 @@ function oCard(o,showA,isCurrent){
 }
 
 async function upSt(id,st){
-    if(st==='returned'||st==='cancelled'||st==='postponed'){if(!confirm(`هل أنت متأكد من تغيير الحالة إلى "${stMap[st]}"؟`))return}
+    if(st==='returned'||st==='cancelled'||st==='postponed'||st==='no_answer'){if(!confirm(`هل أنت متأكد من تغيير الحالة إلى "${stMap[st]}"؟`))return}
     if(!sb)return;await sb.from('orders').update({status:st}).eq('id',id);toast('تم التحديث');loadMyO();
 }
 
