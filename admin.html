@@ -339,6 +339,7 @@ let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn(
 
 const PASS_KEY='bol_admin_pass',DEF_PASS='admin123';
 let allO=[],allD=[],map=null,dMarks={},cMark=null,cLat=29.851,cLng=31.2765;
+const scannedIds=new Set();
 
 // ===== LOGIN =====
 document.getElementById('loginBtn').addEventListener('click',doLogin);
@@ -449,8 +450,8 @@ const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز
 async function loadO(){if(!sb)return;const{data}=await sb.from('orders').select('*').order('created_at',{ascending:false});allO=data||[];renderO();upStats();renderRecent()}
 function renderO(){const s=(document.getElementById('oSearch')?.value||'').trim().toLowerCase(),f=document.getElementById('oFilter')?.value||'';let fl=allO.filter(o=>{const ms=!s||o.customer_phone?.includes(s)||o.customer_phone2?.includes(s)||o.sender_phone?.includes(s)||o.tracking_code?.toLowerCase().includes(s)||o.customer_name?.toLowerCase().includes(s)||o.sender_name?.toLowerCase().includes(s);const mf=!f||o.status===f;return ms&&mf});
 document.getElementById('ordersBody').innerHTML=fl.map(o=>{const dn=allD.find(d=>d.id===o.driver_id)?.name||'-';const amtCell=(o.status==='partial_delivered'&&o.collected_amount!=null)?`<strong style="color:#a16207">${o.collected_amount}</strong> <span style="color:var(--text-m);text-decoration:line-through;font-size:.8rem">${o.amount||0}</span> ج.م`:`${o.amount||0} ج.م`;return`<tr><td class="cc"><input type="checkbox" class="oc" value="${o.id}" data-code="${o.tracking_code}"></td><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.sender_name||'-'}</td><td>${o.sender_phone||'-'}</td><td>${o.customer_name}</td><td>${o.customer_phone||'-'}</td><td>${o.customer_phone2||'-'}</td><td>${o.governorate||'-'}</td><td>${o.area||'-'}</td><td>${o.address||'-'}</td><td style="max-width:150px;white-space:normal">${o.description||'-'}</td><td>${amtCell}</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${dn}</td><td><button class="btn btn-sm btn-in" onclick="editO('${o.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-sc" onclick="copyO('${o.id}')" title="نسخ بيانات الطلب"><i class="fas fa-copy"></i> Copy</button> <button class="btn btn-sm btn-dg" onclick="delO('${o.id}')"><i class="fas fa-trash"></i></button></td></tr>`}).join('');
-// Restore accumulated scanner selections after every re-render
-scannedIds.forEach(id=>{const cb=document.querySelector(`.oc[value="${id}"]`);if(cb)cb.checked=true;});
+scannedIds.forEach(id=>{const cb=document.querySelector('.oc[value="'+id+'"]');if(cb)cb.checked=true;});
+}
 // Arabic <-> English keyboard layout map (Egyptian/standard Arabic 101 layout)
 // Used to fix QR scanner output when Windows keyboard is set to Arabic
 const arEnMap={
@@ -471,10 +472,6 @@ function fixArabicLayout(s){
     }
     return r;
 }
-// ===== SCANNER ACCUMULATOR =====
-// Keeps track of all scanned order IDs across multiple scans
-const scannedIds=new Set();
-
 function filterO(){
     const inp=document.getElementById('oSearch');
     if(inp&&inp.value){
@@ -485,32 +482,19 @@ function filterO(){
                 inp.value=fixed;
             }
         }
-        // If the input looks like a tracking code scanned by the gun,
-        // accumulate it instead of replacing previous selection
         const val=inp.value.trim().toUpperCase();
         if(/^BOL[-][A-Z0-9]/.test(val)){
             const match=allO.find(o=>o.tracking_code&&o.tracking_code.toUpperCase()===val);
             if(match){
                 scannedIds.add(String(match.id));
-                // Re-check all accumulated checkboxes after render
                 renderO();
-                scannedIds.forEach(id=>{
-                    const cb=document.querySelector(`.oc[value="${id}"]`);
-                    if(cb){cb.checked=true;}
-                });
                 updateBulkBar();
-                // Clear search so next scan starts fresh
                 inp.value='';
                 return;
             }
         }
     }
     renderO();
-    // Restore accumulated selections after re-render
-    scannedIds.forEach(id=>{
-        const cb=document.querySelector(`.oc[value="${id}"]`);
-        if(cb){cb.checked=true;}
-    });
     updateBulkBar();
 }
 function togAll(){const c=document.getElementById('selAll').checked;document.querySelectorAll('.oc').forEach(x=>{x.checked=c;if(c)scannedIds.add(x.value);else scannedIds.delete(x.value);});updateBulkBar()}
@@ -878,11 +862,7 @@ async function applyBulkStatus(){
 // Listen for checkbox changes (event delegation since rows render dynamically)
 document.addEventListener('change',function(e){
     if(e.target&&e.target.classList&&e.target.classList.contains('oc')){
-        if(e.target.checked){
-            scannedIds.add(e.target.value);
-        }else{
-            scannedIds.delete(e.target.value);
-        }
+        if(e.target.checked){scannedIds.add(e.target.value);}else{scannedIds.delete(e.target.value);}
         updateBulkBar();
     }
 });
