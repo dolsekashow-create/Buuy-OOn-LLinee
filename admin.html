@@ -180,7 +180,7 @@
 <!-- ORDERS -->
 <div class="page" id="page-orders">
 <div class="ph"><h1><i class="fas fa-box"></i> إدارة الطلبات</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="openM('addOM')"><i class="fas fa-plus"></i> إضافة طلب</button><button class="btn btn-sc" onclick="exportAllOrders()"><i class="fas fa-file-excel"></i> تصدير الكل</button><button class="btn btn-in" onclick="exportSelectedOrders()"><i class="fas fa-check-square"></i> تصدير المحدد</button><button class="btn btn-o" onclick="openM('exportMerchantM')"><i class="fas fa-user-tag"></i> تصدير حسب التاجر</button></div></div>
-<div class="tw"><div class="tt"><input type="text" placeholder="🔫 المسدس / بحث برقم التتبع، الموبايل، الاسم..." id="oSearch" oninput="filterO()" autofocus><select id="oFilter" onchange="filterO()"><option value="">كل الحالات</option><option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="partial_delivered">تسليم جزئي</option><option value="supplied">تم التوريد</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option><option value="postponed">تأجيل</option><option value="returned_to_sender">تم ارتجاع للراسل</option></select></div>
+<div class="tw"><div class="tt"><input type="text" placeholder="🔫 المسدس / بحث برقم التتبع، الموبايل، الاسم..." id="oSearch" oninput="filterO()" autofocus><select id="oFilter" onchange="filterO()"><option value="">كل الحالات</option><option value="pending">قيد الانتظار</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="out_for_delivery">في الطريق</option><option value="delivered">تم التسليم</option><option value="partial_delivered">تسليم جزئي</option><option value="supplied">تم التوريد</option><option value="returned">مرتجع</option><option value="rejected">مرفوض</option><option value="cancelled">ملغي</option><option value="postponed">تأجيل</option><option value="returned_to_sender">تم ارتجاع للراسل</option></select><span id="selBadge" style="display:none;align-items:center;gap:6px;background:rgba(34,197,94,.12);color:#16a34a;padding:6px 12px;border-radius:8px;font-size:.85rem;font-weight:600;border:1.5px solid rgba(34,197,94,.3)"><i class="fas fa-check-circle"></i> <span id="selCount">0</span> محدد</span><button id="clearSelBtn" onclick="clearScanSel()" style="display:none;padding:6px 12px;border-radius:8px;border:1.5px solid #ef4444;background:transparent;color:#ef4444;font-family:'Tajawal';font-size:.85rem;cursor:pointer;font-weight:600"><i class="fas fa-times"></i> مسح التحديد</button></div>
 <div style="overflow-x:auto"><table><thead><tr><th class="cc"><input type="checkbox" id="selAll" onchange="togAll()"></th><th>رقم التتبع</th><th>المرسل</th><th>رقم المرسل</th><th>العميل</th><th>رقم العميل</th><th>رقم آخر</th><th>المحافظة</th><th>المنطقة</th><th>العنوان</th><th>الوصف</th><th>المبلغ</th><th>الحالة</th><th>المندوب</th><th>إجراءات</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div>
 </div>
 
@@ -339,7 +339,8 @@ let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn(
 
 const PASS_KEY='bol_admin_pass',DEF_PASS='admin123';
 let allO=[],allD=[],map=null,dMarks={},cMark=null,cLat=29.851,cLng=31.2765;
-const scannedIds=new Set();
+// Persistent selection — survives table re-renders (scanning, filtering, etc.)
+let selScanIds=new Set();
 
 // ===== LOGIN =====
 document.getElementById('loginBtn').addEventListener('click',doLogin);
@@ -448,10 +449,19 @@ function chgPass(){const p=document.getElementById('newPass').value;if(!p||p.len
 // ===== ORDERS =====
 const stMap={pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',partial_delivered:'تسليم جزئي',supplied:'تم التوريد',returned:'مرتجع',rejected:'مرفوض',cancelled:'ملغي',postponed:'تأجيل',returned_to_sender:'تم ارتجاع للراسل'};
 async function loadO(){if(!sb)return;const{data}=await sb.from('orders').select('*').order('created_at',{ascending:false});allO=data||[];renderO();upStats();renderRecent()}
-function renderO(){const s=(document.getElementById('oSearch')?.value||'').trim().toLowerCase(),f=document.getElementById('oFilter')?.value||'';let fl=allO.filter(o=>{const ms=!s||o.customer_phone?.includes(s)||o.customer_phone2?.includes(s)||o.sender_phone?.includes(s)||o.tracking_code?.toLowerCase().includes(s)||o.customer_name?.toLowerCase().includes(s)||o.sender_name?.toLowerCase().includes(s);const mf=!f||o.status===f;return ms&&mf});
-document.getElementById('ordersBody').innerHTML=fl.map(o=>{const dn=allD.find(d=>d.id===o.driver_id)?.name||'-';const amtCell=(o.status==='partial_delivered'&&o.collected_amount!=null)?`<strong style="color:#a16207">${o.collected_amount}</strong> <span style="color:var(--text-m);text-decoration:line-through;font-size:.8rem">${o.amount||0}</span> ج.م`:`${o.amount||0} ج.م`;return`<tr><td class="cc"><input type="checkbox" class="oc" value="${o.id}" data-code="${o.tracking_code}"></td><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.sender_name||'-'}</td><td>${o.sender_phone||'-'}</td><td>${o.customer_name}</td><td>${o.customer_phone||'-'}</td><td>${o.customer_phone2||'-'}</td><td>${o.governorate||'-'}</td><td>${o.area||'-'}</td><td>${o.address||'-'}</td><td style="max-width:150px;white-space:normal">${o.description||'-'}</td><td>${amtCell}</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${dn}</td><td><button class="btn btn-sm btn-in" onclick="editO('${o.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-sc" onclick="copyO('${o.id}')" title="نسخ بيانات الطلب"><i class="fas fa-copy"></i> Copy</button> <button class="btn btn-sm btn-dg" onclick="delO('${o.id}')"><i class="fas fa-trash"></i></button></td></tr>`}).join('');
-scannedIds.forEach(id=>{const cb=document.querySelector('.oc[value="'+id+'"]');if(cb)cb.checked=true;});
-}
+function renderO(){const s=(document.getElementById('oSearch')?.value||'').trim().toLowerCase(),f=document.getElementById('oFilter')?.value||'';
+// Search/filter matches
+const matches=allO.filter(o=>{const ms=!s||o.customer_phone?.includes(s)||o.customer_phone2?.includes(s)||o.sender_phone?.includes(s)||o.tracking_code?.toLowerCase().includes(s)||o.customer_name?.toLowerCase().includes(s)||o.sender_name?.toLowerCase().includes(s);const mf=!f||o.status===f;return ms&&mf});
+// Merge: previously-selected orders stay visible even if they don't match the current search
+const seen=new Set();const fl=[];
+allO.forEach(o=>{if(selScanIds.has(String(o.id))&&!seen.has(o.id)){fl.push(o);seen.add(o.id)}});
+matches.forEach(o=>{if(!seen.has(o.id)){fl.push(o);seen.add(o.id)}});
+document.getElementById('ordersBody').innerHTML=fl.map(o=>{const dn=allD.find(d=>d.id===o.driver_id)?.name||'-';const amtCell=(o.status==='partial_delivered'&&o.collected_amount!=null)?`<strong style="color:#a16207">${o.collected_amount}</strong> <span style="color:var(--text-m);text-decoration:line-through;font-size:.8rem">${o.amount||0}</span> ج.م`:`${o.amount||0} ج.م`;const isSel=selScanIds.has(String(o.id));const rowBg=isSel?' style="background:rgba(34,197,94,.06)"':'';return`<tr${rowBg}><td class="cc"><input type="checkbox" class="oc" value="${o.id}" data-code="${o.tracking_code}"${isSel?' checked':''}></td><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.sender_name||'-'}</td><td>${o.sender_phone||'-'}</td><td>${o.customer_name}</td><td>${o.customer_phone||'-'}</td><td>${o.customer_phone2||'-'}</td><td>${o.governorate||'-'}</td><td>${o.area||'-'}</td><td>${o.address||'-'}</td><td style="max-width:150px;white-space:normal">${o.description||'-'}</td><td>${amtCell}</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${dn}</td><td><button class="btn btn-sm btn-in" onclick="editO('${o.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-sc" onclick="copyO('${o.id}')" title="نسخ بيانات الطلب"><i class="fas fa-copy"></i> Copy</button> <button class="btn btn-sm btn-dg" onclick="delO('${o.id}')"><i class="fas fa-trash"></i></button></td></tr>`}).join('');
+updateSelBadge();}
+// Update the selection-count badge + clear button visibility
+function updateSelBadge(){const n=selScanIds.size;const badge=document.getElementById('selBadge');const btn=document.getElementById('clearSelBtn');if(badge){badge.style.display=n>0?'inline-flex':'none';document.getElementById('selCount').textContent=n}if(btn)btn.style.display=n>0?'inline-flex':'none'}
+// Clear all scanned/selected items
+function clearScanSel(){selScanIds.clear();renderO();updateBulkBar()}
 // Arabic <-> English keyboard layout map (Egyptian/standard Arabic 101 layout)
 // Used to fix QR scanner output when Windows keyboard is set to Arabic
 const arEnMap={
@@ -475,29 +485,37 @@ function fixArabicLayout(s){
 function filterO(){
     const inp=document.getElementById('oSearch');
     if(inp&&inp.value){
+        // Only convert if input looks like a mangled tracking code:
+        // - Contains Arabic characters
+        // - After conversion, has the BOL- prefix or contains a hyphen with letters/numbers
+        // Names like "محمد" or "علي" will NOT trigger conversion
         const hasArabic=/[\u0600-\u06FF]/.test(inp.value);
         if(hasArabic){
             const fixed=fixArabicLayout(inp.value).toUpperCase();
+            // Tracking codes have format like "BOL-XXXX-XXXX" - look for hyphen pattern
             if(/^BOL[-\s]/.test(fixed)||/^[A-Z0-9]{2,}-[A-Z0-9]{2,}/.test(fixed)){
                 inp.value=fixed;
             }
         }
-        const val=inp.value.trim().toUpperCase();
-        if(/^BOL[-][A-Z0-9]/.test(val)){
-            const match=allO.find(o=>o.tracking_code&&o.tracking_code.toUpperCase()===val);
+        // Scanner-gun behavior: if the input is a full tracking code that
+        // exactly matches one order, auto-add it to the persistent selection
+        // and clear the box so the next scan accumulates instead of replacing.
+        const v=inp.value.trim();
+        if(/^BOL-[A-Z0-9]+-[A-Z0-9]+$/i.test(v)){
+            const match=allO.find(o=>(o.tracking_code||'').toLowerCase()===v.toLowerCase());
             if(match){
-                scannedIds.add(String(match.id));
+                selScanIds.add(String(match.id));
+                inp.value='';
                 renderO();
                 updateBulkBar();
-                inp.value='';
+                toast('✓ تم إضافة: '+match.tracking_code);
                 return;
             }
         }
     }
     renderO();
-    updateBulkBar();
 }
-function togAll(){const c=document.getElementById('selAll').checked;document.querySelectorAll('.oc').forEach(x=>{x.checked=c;if(c)scannedIds.add(x.value);else scannedIds.delete(x.value);});updateBulkBar()}
+function togAll(){const c=document.getElementById('selAll').checked;document.querySelectorAll('.oc').forEach(x=>{x.checked=c;if(c)selScanIds.add(String(x.value));else selScanIds.delete(String(x.value))});updateSelBadge();updateBulkBar()}
 function renderRecent(){const s=(document.getElementById('dashSearch')?.value||'').trim();let filtered=allO;if(s){filtered=allO.filter(o=>(o.customer_phone||'').includes(s)||(o.customer_phone2||'').includes(s)||(o.sender_phone||'').includes(s))}document.getElementById('recentBody').innerHTML=filtered.slice(0,8).map(o=>`<tr><td><strong style="color:var(--orange)">${o.tracking_code}</strong></td><td>${o.sender_name||'-'}</td><td>${o.sender_phone||'-'}</td><td>${o.customer_name}</td><td>${o.customer_phone||'-'}</td><td>${o.customer_phone2||'-'}</td><td>${o.governorate||'-'}</td><td>${o.area||'-'}</td><td>${o.address||'-'}</td><td>${o.amount||0} ج.م</td><td><span class="badge b-${o.status}">${stMap[o.status]||o.status}</span></td><td>${new Date(o.created_at).toLocaleDateString('ar-EG')}</td></tr>`).join('')}
 function filterDash(){renderRecent()}
 function upStats(){document.getElementById('stAll').textContent=allO.length;document.getElementById('stPend').textContent=allO.filter(o=>o.status==='pending'||o.status==='processing').length;document.getElementById('stShip').textContent=allO.filter(o=>o.status==='shipped'||o.status==='out_for_delivery').length;document.getElementById('stDone').textContent=allO.filter(o=>o.status==='delivered').length;document.getElementById('stDrv').textContent=allD.length;document.getElementById('stRev').textContent=allO.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.amount||0),0).toLocaleString()}
@@ -835,7 +853,6 @@ function clearBulkSelection(){
     document.querySelectorAll('.oc:checked').forEach(c=>c.checked=false);
     const all=document.getElementById('selAll');
     if(all)all.checked=false;
-    scannedIds.clear();
     updateBulkBar();
 }
 
@@ -862,7 +879,11 @@ async function applyBulkStatus(){
 // Listen for checkbox changes (event delegation since rows render dynamically)
 document.addEventListener('change',function(e){
     if(e.target&&e.target.classList&&e.target.classList.contains('oc')){
-        if(e.target.checked){scannedIds.add(e.target.value);}else{scannedIds.delete(e.target.value);}
+        // Keep the persistent selection Set in sync with manual clicks
+        const id=String(e.target.value);
+        if(e.target.checked)selScanIds.add(id);
+        else selScanIds.delete(id);
+        updateSelBadge();
         updateBulkBar();
     }
 });
