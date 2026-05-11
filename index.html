@@ -392,8 +392,18 @@
         r.classList.add('show');
         try {
             if (!sb) throw new Error('لا يوجد اتصال بقاعدة البيانات');
-            var res = await sb.from('orders').select('*').or('customer_phone.eq.'+code+',customer_phone2.eq.'+code+',sender_phone.eq.'+code+',tracking_code.eq.'+code).order('created_at',{ascending:false});
-            if (res.error) throw res.error;
+            // Paginate to bypass Supabase's 1000-row default cap.
+            // A merchant phone can match many thousands of orders — we must fetch them all.
+            var PAGE = 1000, fromIdx = 0, all = [];
+            while (true) {
+                var res = await sb.from('orders').select('*').or('customer_phone.eq.'+code+',customer_phone2.eq.'+code+',sender_phone.eq.'+code+',tracking_code.eq.'+code).order('created_at',{ascending:false}).range(fromIdx, fromIdx + PAGE - 1);
+                if (res.error) throw res.error;
+                if (!res.data || res.data.length === 0) break;
+                all = all.concat(res.data);
+                if (res.data.length < PAGE) break;
+                fromIdx += PAGE;
+            }
+            res = { data: all, error: null };
             if (!res.data || res.data.length === 0) {
                 r.innerHTML = '<p style="text-align:center;color:var(--danger)"><i class="fas fa-times-circle"></i> لم يتم العثور على شحنات بهذا الرقم</p>';
                 return;
