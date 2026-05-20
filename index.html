@@ -419,12 +419,18 @@
             var html = '';
             for (var idx = 0; idx < res.data.length; idx++) {
                 var d = res.data[idx];
-                var sm = {pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',cancelled:'ملغي',returned:'مرتجع',rejected:'مرفوض'};
-                var scl = {pending:'sd-p',processing:'sd-p',shipped:'sd-s',out_for_delivery:'sd-s',delivered:'sd-d',cancelled:'sd-c'};
+                var sm = {pending:'قيد الانتظار',processing:'قيد التجهيز',shipped:'تم الشحن',out_for_delivery:'في الطريق',delivered:'تم التسليم',cancelled:'ملغي',returned:'مرتجع',rejected:'مرفوض',postponed:'مؤجل',no_answer:'عدم الرد',partial_delivered:'تسليم جزئي',supplied:'تم التوريد'};
+                var scl = {pending:'sd-p',processing:'sd-p',shipped:'sd-s',out_for_delivery:'sd-s',delivered:'sd-d',cancelled:'sd-c',returned:'sd-c',rejected:'sd-c',postponed:'sd-postponed',no_answer:'sd-c',partial_delivered:'sd-d',supplied:'sd-d'};
                 var stages = ['pending','processing','shipped','out_for_delivery','delivered'];
                 var ci = stages.indexOf(d.status);
+                // For special statuses, highlight up to the last known stage
+                var isSpecial = ['postponed','no_answer','cancelled','returned','rejected'].indexOf(d.status) >= 0;
+                var specialIcons = {postponed:'⏳ مؤجل',no_answer:'📵 عدم الرد',cancelled:'❌ ملغي',returned:'↩️ مرتجع',rejected:'🚫 مرفوض'};
                 html += '<div style="'+(idx>0?'border-top:2px solid var(--border);padding-top:16px;margin-top:16px;':'')+'">';
-                html += '<div class="ts"><span class="sd '+(scl[d.status]||'sd-p')+'"></span><span>'+(sm[d.status]||d.status)+'</span></div>';
+                // Status badge
+                var statusColor = {postponed:'#3730a3',no_answer:'#6d28d9',cancelled:'#b91c1c',returned:'#be185d',rejected:'#991b1b',delivered:'#15803d',partial_delivered:'#a16207',shipped:'#1d4ed8',out_for_delivery:'#c2410c',processing:'#1d4ed8',pending:'#b45309',supplied:'#065f46'};
+                var statusBg = {postponed:'#e0e7ff',no_answer:'#ede9fe',cancelled:'#fee2e2',returned:'#fce7f3',rejected:'#fef2f2',delivered:'#dcfce7',partial_delivered:'#fef3c7',shipped:'#dbeafe',out_for_delivery:'#ffedd5',processing:'#dbeafe',pending:'#fef3c7',supplied:'#d1fae5'};
+                html += '<div class="ts"><span style="display:inline-block;padding:4px 14px;border-radius:20px;font-size:.85rem;font-weight:700;background:'+(statusBg[d.status]||'#f3f5f9')+';color:'+(statusColor[d.status]||'#1a2744')+'">'+(sm[d.status]||d.status)+'</span></div>';
                 html += '<div class="td">';
                 html += '<p><strong>رقم التتبع:</strong> '+d.tracking_code+'</p>';
                 html += '<p><strong>المرسل:</strong> '+(d.sender_name||'-')+'</p>';
@@ -441,8 +447,31 @@
                 html += '<p><strong>التاريخ:</strong> '+new Date(d.created_at).toLocaleDateString('ar-EG')+'</p>';
                 html += '</div><div class="tl">';
                 var names = ['تم استلام الطلب','قيد التجهيز','تم الشحن','في الطريق','تم التسليم'];
-                for (var j = 0; j < names.length; j++) {
-                    html += '<div class="ti '+(j<=ci?'dn':'')+'"><h4>'+names[j]+'</h4></div>';
+                // For normal flow
+                if (!isSpecial && d.status !== 'partial_delivered' && d.status !== 'supplied') {
+                    for (var j = 0; j < names.length; j++) {
+                        html += '<div class="ti '+(j<=ci?'dn':'')+'"><h4>'+names[j]+'</h4></div>';
+                    }
+                } else if (d.status === 'partial_delivered' || d.status === 'supplied') {
+                    // delivered variants
+                    for (var j = 0; j < names.length; j++) {
+                        html += '<div class="ti dn"><h4>'+names[j]+'</h4></div>';
+                    }
+                    html += '<div class="ti dn" style="--ti-color:'+(statusColor[d.status]||'var(--orange)')+'"><h4 style="color:'+(statusColor[d.status]||'var(--orange)')+'">'+(sm[d.status]||d.status)+'</h4></div>';
+                } else {
+                    // postponed, no_answer, cancelled, returned, rejected
+                    // show progress up to out_for_delivery (stage 3), then show special status
+                    var progressStages = ['pending','processing','shipped','out_for_delivery'];
+                    var progressNames = ['تم استلام الطلب','قيد التجهيز','تم الشحن','في الطريق'];
+                    // find last known stage for the order before this special status
+                    // we show all 4 as done since the order reached this point
+                    for (var j = 0; j < progressNames.length; j++) {
+                        html += '<div class="ti dn"><h4>'+progressNames[j]+'</h4></div>';
+                    }
+                    // Special status node
+                    var spColor = statusColor[d.status]||'#6b7280';
+                    var spBg = statusBg[d.status]||'#f3f4f6';
+                    html += '<div class="ti dn"><h4 style="color:'+spColor+';background:'+spBg+';display:inline-block;padding:3px 10px;border-radius:8px;font-size:.88rem">'+(specialIcons[d.status]||'')+' '+(sm[d.status]||d.status)+'</h4></div>';
                 }
                 html += '</div></div>';
             }
