@@ -442,7 +442,7 @@
                 html += '<p><strong>المحافظة:</strong> '+(d.governorate||'-')+'</p>';
                 html += '<p><strong>المنطقة:</strong> '+(d.area||'-')+'</p>';
                 html += '<p><strong>العنوان:</strong> '+(d.address||'-')+'</p>';
-                html += '<p><strong>المبلغ:</strong> '+(d.amount||0)+' ج.م</p>';
+                html += '<p><strong>المبلغ:</strong> '+(d.amount||0)+' ج.م'+(d.shipping_fee?' &nbsp;|&nbsp; <strong style="color:#c2410c">شحن الرفض:</strong> '+d.shipping_fee+' ج.م':'')+' </p>';
                 html += '<p><strong>عدد القطع:</strong> '+(d.pieces_count||1)+'</p>';
                 html += '<p><strong>إمكانية الفتح:</strong> '+(d.allow_open===false?'غير مسموح':'مسموح')+'</p>';
                 html += '<p><strong>التاريخ:</strong> '+new Date(d.created_at).toLocaleDateString('ar-EG')+'</p>';
