@@ -270,6 +270,7 @@
         </div></div>
         <div class="fg"><label>عدد القطع</label><input type="number" id="oPieces" value="1" min="1"></div>
         <div class="fg"><label>إجمالي المبلغ (جنيه)</label><input type="number" id="oAmount" placeholder="0"></div>
+        <div class="fg"><label>تكلفة الشحن في حالة الرفض (جنيه)</label><input type="number" id="oShippingFee" placeholder="0" min="0"></div>
         <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px;margin:12px 0;text-align:center;color:#c2410c;font-weight:700;font-size:.9rem"><i class="fas fa-info-circle"></i> في حالة الرفض يتم دفع الشحن</div>
         <div class="mb">
             <button class="btn btn-p" id="btnSubmitOrder" style="flex:1"><i class="fas fa-check"></i> إرسال الطلب</button>
@@ -502,6 +503,7 @@
         var g = document.getElementById('oGov').value.trim();
         var ds = document.getElementById('oDesc').value.trim();
         var am = parseFloat(document.getElementById('oAmount').value) || 0;
+        var shippingFee = parseFloat(document.getElementById('oShippingFee').value) || 0;
         var allow = (document.querySelector('input[name="oOpen"]:checked') || {}).value === 'yes';
         var pieces = parseInt(document.getElementById('oPieces').value) || 1;
         if (!n || !sn || !sp || !ph || !ad || !g) return showToast('يرجى ملء الحقول المطلوبة', true);
@@ -512,13 +514,14 @@
                 tracking_code: tc, customer_name: n, sender_name: sn, sender_phone: sp,
                 customer_phone: ph, customer_phone2: ph2,
                 address: ad, area: ar, governorate: g, description: ds, amount: am,
+                shipping_fee: shippingFee,
                 allow_open: allow, pieces_count: pieces,
                 status: 'pending', source: 'website'
             });
             if (res.error) throw res.error;
             showToast('تم إرسال الطلب! رقم التتبع: ' + tc);
             closeModal('orderModal');
-            var fields = ['oName','oSender','oSenderPhone','oPhone','oPhone2','oAddress','oArea','oGov','oDesc','oAmount'];
+            var fields = ['oName','oSender','oSenderPhone','oPhone','oPhone2','oAddress','oArea','oGov','oDesc','oAmount','oShippingFee'];
             for (var i = 0; i < fields.length; i++) document.getElementById(fields[i]).value = '';
             document.getElementById('oPieces').value = '1';
             var defOpen = document.querySelector('input[name="oOpen"][value="yes"]');
