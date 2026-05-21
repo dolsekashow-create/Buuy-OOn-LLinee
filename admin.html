@@ -843,7 +843,7 @@ function toast(m,err){const t=document.getElementById('toast');t.textContent=m;t
 
 // ===== EXCEL EXPORT =====
 function ordersToSheetData(orders){
-    const headers=['رقم التتبع','اسم الراسل','رقم الراسل','اسم العميل','رقم العميل','رقم آخر','المحافظة','المنطقة','العنوان','محتوى الشحنة','عدد القطع','إمكانية الفتح','المبلغ الأصلي','المبلغ المحصّل','الحالة','المندوب','سبب التسليم الجزئي','المصدر','ملاحظات','التاريخ'];
+    const headers=['رقم التتبع','اسم الراسل','رقم الراسل','اسم العميل','رقم العميل','رقم آخر','المحافظة','المنطقة','العنوان','محتوى الشحنة','عدد القطع','إمكانية الفتح','المبلغ الأصلي','المبلغ المحصّل','تكلفة الشحن عند الرفض','الحالة','المندوب','سبب التسليم الجزئي','المصدر','ملاحظات','التاريخ'];
     const rows=orders.map(o=>{
         const drvName=allD.find(d=>d.id===o.driver_id)?.name||'';
         const collected=(o.status==='partial_delivered'&&o.collected_amount!=null)?o.collected_amount:(o.status==='delivered'?(o.amount||0):'');
@@ -862,6 +862,7 @@ function ordersToSheetData(orders){
             o.allow_open===false?'غير مسموح':'مسموح',
             o.amount||0,
             collected,
+            o.shipping_fee||0,
             stMap[o.status]||o.status||'',
             drvName,
             o.partial_reason||'',
